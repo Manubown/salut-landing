@@ -1,0 +1,16 @@
+node_modules
+dist
+.angular
+.git
+.gitignore
+.devcontainer
+.data
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore
+npm-debug.log*
+.vscode
+.idea
+*.log

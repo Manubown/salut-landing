@@ -1,0 +1,42 @@
+@if (status() === 'success') {
+  <div class="notify__done" role="status" aria-live="polite">
+    <span class="notify__check" aria-hidden="true">✓</span>
+    <div>
+      <strong>You're on the list!</strong>
+      @if (position(); as pos) {
+        <p>You're <b>#{{ pos }}</b> in line — we'll email you the moment Salut opens.</p>
+      } @else {
+        <p>We'll email you the moment Salut opens.</p>
+      }
+    </div>
+  </div>
+} @else {
+  <form class="notify" (ngSubmit)="submit()" novalidate>
+    <div class="notify__row">
+      <label class="visually-hidden" for="notify-email">Email address</label>
+      <input
+        id="notify-email"
+        class="notify__input"
+        type="email"
+        inputmode="email"
+        autocomplete="email"
+        placeholder="you@example.com"
+        [formControl]="email"
+        [attr.aria-invalid]="email.touched && email.invalid"
+      />
+      <button class="btn btn--primary" type="submit" [disabled]="status() === 'loading'">
+        {{ status() === 'loading' ? 'Joining…' : 'Notify me' }}
+      </button>
+    </div>
+
+    @if (email.touched && email.invalid) {
+      <p class="notify__hint notify__hint--error" role="alert">
+        Please enter a valid email address.
+      </p>
+    } @else if (status() === 'error') {
+      <p class="notify__hint notify__hint--error" role="alert">{{ errorMsg() }}</p>
+    } @else {
+      <p class="notify__hint">No spam — just one email when we launch. Unsubscribe anytime.</p>
+    }
+  </form>
+}

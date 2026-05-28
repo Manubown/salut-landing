@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Legal pages are marked noindex via meta tags (so crawlers must still be
+# able to fetch them) — intentionally not disallowed here.
+
+Sitemap: https://salut.bown.at/sitemap.xml

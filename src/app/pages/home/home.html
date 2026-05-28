@@ -1,0 +1,103 @@
+<a class="skip-link" href="#join">Skip to sign-up</a>
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="brand" href="/" aria-label="Salut — home">
+      <span class="brand__mark" aria-hidden="true">S</span>
+      <span class="brand__word">Salut</span>
+    </a>
+    <a class="btn site-header__cta" href="#join">Get early access</a>
+  </div>
+</header>
+
+<main id="top">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero__grid">
+      <div class="hero__copy">
+        <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span> Launching soon · DE &amp; EN</span>
+        <h1 class="hero__title">
+          Great cocktails.<br />
+          The <span class="hl">hottest events</span>.<br />
+          Your whole crew.
+        </h1>
+        <p class="hero__lede">
+          Salut is the companion for your nights out — discover cocktail recipes worth trying,
+          find what's actually happening in your region, and group up with friends to go together.
+        </p>
+
+        <div id="join" class="hero__join">
+          <salut-notify-form />
+        </div>
+
+        <ul class="hero__proof">
+          <li>🍸 Hundreds of recipes at launch</li>
+          <li aria-hidden="true">·</li>
+          <li>No card. No spam.</li>
+        </ul>
+      </div>
+
+      <div class="hero__art" aria-hidden="true">
+        <article class="float-card float-card--recipe">
+          <span class="float-card__tag">Recipe</span>
+          <div class="glass">🍹</div>
+          <h3>Spritz Salut</h3>
+          <p>Prosecco · Aperol · soda · orange</p>
+        </article>
+
+        <article class="float-card float-card--event">
+          <span class="float-card__tag float-card__tag--accent">Tonight · 2.1 km</span>
+          <h3>Rooftop Sessions</h3>
+          <p>Live DJ · 312 going</p>
+          <div class="avatars"><span></span><span></span><span></span><span>+</span></div>
+        </article>
+
+        <article class="float-card float-card--gauge">
+          <span class="float-card__tag">Stay safe</span>
+          <div class="gauge"><span style="--p: 38%"></span></div>
+          <p>Know your limit with the built-in BAC meter.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section features">
+    <div class="container">
+      <span class="eyebrow">What's inside</span>
+      <h2 class="section__title">Everything for the night, in one place.</h2>
+      <div class="feature-grid">
+        @for (f of features; track f.title) {
+          <article class="feature-card">
+            <span class="feature-card__icon" aria-hidden="true">{{ f.icon }}</span>
+            <h3>{{ f.title }}</h3>
+            <p>{{ f.body }}</p>
+          </article>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="section cta">
+    <div class="container container--narrow cta__inner">
+      <h2 class="section__title">Be first through the door.</h2>
+      <p class="cta__lede">
+        We're opening Salut to a first group soon. Drop your email and you'll be the first to know —
+        plus a few founding-member perks for the early crowd.
+      </p>
+      <salut-notify-form />
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <span class="brand"><span class="brand__mark" aria-hidden="true">S</span> Salut</span>
+    <nav class="site-footer__links" aria-label="Rechtliches">
+      <a routerLink="/impressum">Impressum</a>
+      <a routerLink="/datenschutz">Datenschutz</a>
+    </nav>
+    <p>© {{ year }} Salut · Please drink responsibly.</p>
+  </div>
+</footer>

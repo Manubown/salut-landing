@@ -1,0 +1,26 @@
+# Coolify reference for salut-landing.
+#
+# Coolify can deploy this repo directly as a "Dockerfile application" — this
+# compose mainly documents the persistent-volume + expose pattern. Traefik
+# (managed by Coolify) terminates TLS at the domain, so we `expose` the port
+# internally rather than publishing it on the host. Mirrors the Coder
+# compose in "../docker compose/coolify".
+services:
+  landing:
+    build: .
+    restart: unless-stopped
+    expose:
+      - "80"
+    environment:
+      NODE_ENV: production
+      PORT: "80"
+      HOST: 0.0.0.0
+      DATA_DIR: /data
+    volumes:
+      # Waitlist (subscribers.jsonl) survives redeploys. In Coolify, point
+      # this at a persistent volume such as /data/salut/landing.
+      - salut-landing-data:/data
+
+volumes:
+  salut-landing-data:
+    driver: local
