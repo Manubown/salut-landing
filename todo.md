@@ -7,7 +7,7 @@ deploy-ready, indexable, converting landing live on `salut.bown.at`.
 - [x] Angular 21 SSR scaffold (standalone, signals, prerender)
 - [x] Design tokens (`_tokens.scss`) + global styles (Tactile & Gamified)
 - [x] Home page: hero, three pillars, CTA, footer
-- [x] Email waitlist: notify-form + `POST /api/subscribe` + JSONL on `/data`
+- [x] Email waitlist: notify-form + `POST /api/subscribe` → proxy to salut-api
 - [x] SeoService (title/meta/canonical/JSON-LD); `SITE_URL` centralised
 - [x] `robots.txt` + `sitemap.xml`
 - [x] Legal: Impressum (§5 ECG) + Datenschutz (DSGVO/DSG), both `noindex`
@@ -33,7 +33,7 @@ deploy-ready, indexable, converting landing live on `salut.bown.at`.
 - [ ] Rate-limit `/api/subscribe` (basic IP/"leaky bucket" in-memory or Traefik)
 - [ ] Honeypot field / simple spam guard on the form
 - [ ] (Stretch) double opt-in confirmation email — needs an SMTP/email provider
-- [ ] Admin: simple way to read the list (count endpoint exists; export script?)
+- [ ] Admin: read/export the list (lives in salut-api now — SQL/export script)
 
 ## Accessibility
 - [ ] Keyboard pass: tab order, focus visible, skip-link works
@@ -42,17 +42,17 @@ deploy-ready, indexable, converting landing live on `salut.bown.at`.
 
 ## Deploy
 - [ ] Create Coolify app (Dockerfile), set domain `salut.bown.at`
-- [ ] Mount persistent volume at `/data`; **verify it survives a redeploy**
-- [ ] Set env: `DATA_DIR=/data` (and `PORT` if Traefik needs it)
+- [ ] Deploy **salut-api** first so sign-ups have a backend
+- [ ] Set env: `WAITLIST_API_URL` (defaults to api.salut.bown.at) + `PORT` if needed
 - [ ] First deploy smoke test: home renders, form submits, count increments
-- [ ] Back up `subscribers.jsonl`
+- [ ] (waitlist backup now lives with salut-api / its Postgres)
 
 ## Launch cutover (when `salut.com` is ready)
 - [ ] Flip `SITE_URL` in `core/seo/seo.service.ts`
 - [ ] Update `index.html` (canonical, og:url, og:image)
 - [ ] Update `public/robots.txt` + `public/sitemap.xml`
 - [ ] Update Impressum "Web" link
-- [ ] Point production domain in Coolify, carry over the `/data` volume
+- [ ] Point production domain in Coolify (no volume to carry over)
 - [ ] Re-submit sitemap for the new domain; set up 301s if staging was indexed
 
 ## Later (not this phase)

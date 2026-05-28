@@ -95,16 +95,16 @@ npm start          # ng serve -> http://localhost:4200 (port 4200 is forwarded)
 ## Deploy (Coolify on Hetzner)
 1. Push to `main`. Coolify builds the `Dockerfile` and deploys.
 2. App uses **`expose: 80`**; Traefik terminates TLS at the domain.
-3. Mount a **persistent volume at `/data`** (the waitlist file). It must survive
-   redeploys — verify after the first deploy.
+3. **No volume needed** — the waitlist lives in salut-api/Postgres. Deploy
+   salut-api first so sign-ups have somewhere to go.
 4. Set domain: **`salut.bown.at`** (staging) now. At launch, see the domain
    cutover steps in [plan.md](./plan.md) / [continue.md](./continue.md).
-5. Env: `PORT` (Coolify/Traefik), `DATA_DIR=/data`. See `.env.example`.
+5. Env: `PORT` (Coolify/Traefik), `WAITLIST_API_URL` (the API). See `.env.example`.
 
 ### Docker locally
 ```bash
 docker build -t salut-landing .
-docker run --rm -p 8080:80 -v salut-landing-data:/data salut-landing
+docker run --rm -p 8080:80 -e WAITLIST_API_URL=https://api.salut.bown.at salut-landing
 ```
 
 ## The waitlist endpoint (contract)
@@ -113,5 +113,5 @@ docker run --rm -p 8080:80 -v salut-landing-data:/data salut-landing
 → `400 { ok: false, error: "invalid_email" }`
 `GET /api/subscribe/count` → `{ ok: true, count: N }`
 
-This contract is frozen — Phase 2 swaps JSONL for Postgres behind it without
-touching `SubscribeService` or the form.
+This contract is frozen — `src/server.ts` proxies it to salut-api (Postgres)
+without touching `SubscribeService` or the form.

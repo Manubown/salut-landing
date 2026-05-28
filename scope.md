@@ -25,7 +25,7 @@ Geographic focus at launch: German-speaking (AT first), so the site ships
 ## In scope (this phase: Landing + onboarding)
 - SSR + prerendered marketing pages (hero, the three pillars, social proof, CTA).
 - **Email waitlist** capture with validation, de-dupe and a "you're #N in line"
-  confirmation. Persisted as JSONL on a `/data` volume.
+  confirmation. Stored in Postgres via **salut-api** (the landing proxies to it).
 - **SEO baseline**: server-rendered `<title>`/meta/canonical, Open Graph, JSON-LD,
   `robots.txt`, `sitemap.xml`.
 - **Legal pages** required in Austria: **Impressum** (§ 5 ECG) and
@@ -37,9 +37,9 @@ Geographic focus at launch: German-speaking (AT first), so the site ships
 
 ## Out of scope (deferred to later phases)
 - The authenticated product experience → lives in `salut-app`.
-- Real backend / database / auth → **Phase 2** (NestJS + Postgres + Prisma).
-  The waitlist's `POST /api/subscribe` contract is the seam; JSONL → Postgres
-  later without changing the client.
+- Auth + the product backend → **Phase 2+** (NestJS + Postgres + Prisma, the
+  `../salut-api` repo). The waitlist already persists there; auth and product
+  data come next.
 - Double opt-in email confirmation + transactional email sending (planned; see
   [todo.md](./todo.md)).
 - Real cocktail/event content (CMS or API-driven) — marketing copy only for now.

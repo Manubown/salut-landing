@@ -47,7 +47,3 @@ Thumbs.db
 .env
 .env.*
 !.env.example
-
-# Local waitlist data (persisted on the /data volume in prod)
-/.data
-*.jsonl

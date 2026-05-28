@@ -9,10 +9,10 @@ export interface SubscribeResponse {
 }
 
 /**
- * Talks to the landing's own Express endpoint (see src/server.ts), which
- * appends confirmed emails to a JSONL file on the persistent /data volume.
- * Swapped for the real API (api.salut.bown.at, later api.salut.com) in the
- * backend phase.
+ * Talks to the landing's own same-origin Express endpoint (see src/server.ts),
+ * which proxies server-to-server to the waitlist API (api.salut.bown.at, later
+ * api.salut.com) where the email is stored in Postgres. Same-origin keeps the
+ * browser free of CORS.
  */
 @Injectable({ providedIn: 'root' })
 export class SubscribeService {

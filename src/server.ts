@@ -5,80 +5,87 @@ import {
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import express from 'express';
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
-// Where confirmed waitlist emails land. On Coolify this points at a
-// persistent volume (DATA_DIR=/data); locally it falls back to ./.data so
-// dev never writes outside the project. Replaced by Postgres in the
-// backend phase — the API contract (POST /api/subscribe) stays the same.
-const dataDir = process.env['DATA_DIR'] || join(process.cwd(), '.data');
-const subscribersFile = join(dataDir, 'subscribers.jsonl');
+// The waitlist now lives in the salut-api service (NestJS + Postgres). The
+// browser still talks to this same-origin Express endpoint (no CORS); we
+// forward server-to-server to the API. Staging api.salut.bown.at, launch
+// api.salut.com — override per environment with WAITLIST_API_URL.
+const waitlistApiUrl = (
+  process.env['WAITLIST_API_URL'] || 'https://api.salut.bown.at'
+).replace(/\/$/, '');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function readEmails(): string[] {
-  if (!existsSync(subscribersFile)) {
-    return [];
-  }
-  return readFileSync(subscribersFile, 'utf8')
-    .split('\n')
-    .filter((line) => line.trim().length > 0)
-    .map((line) => {
-      try {
-        return String(JSON.parse(line).email ?? '').toLowerCase();
-      } catch {
-        return '';
-      }
-    })
-    .filter(Boolean);
-}
+const UPSTREAM_TIMEOUT_MS = 8000;
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
 app.use(express.json({ limit: '8kb' }));
 
+async function callApi(
+  path: string,
+  init: RequestInit,
+): Promise<{ status: number; body: unknown }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+  try {
+    const resp = await fetch(`${waitlistApiUrl}${path}`, {
+      ...init,
+      signal: controller.signal,
+    });
+    const body = await resp.json().catch(() => null);
+    return { status: resp.status, body };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
- * Waitlist sign-up. Validates, de-duplicates and appends to a JSONL file
- * on the persistent data volume, returning the subscriber's position.
+ * Waitlist sign-up. Fast-fails obviously invalid emails, then proxies to the
+ * API (POST /waitlist), forwarding the user-agent. The API de-duplicates and
+ * returns the subscriber's position.
  */
-app.post('/api/subscribe', (req, res) => {
+app.post('/api/subscribe', async (req, res) => {
   const email = String(req.body?.email ?? '').trim().toLowerCase();
   if (!EMAIL_RE.test(email) || email.length > 254) {
     res.status(400).json({ ok: false, error: 'invalid_email' });
     return;
   }
 
-  try {
-    if (!existsSync(dataDir)) {
-      mkdirSync(dataDir, { recursive: true });
-    }
-    const existing = readEmails();
-    const already = existing.indexOf(email);
-    if (already !== -1) {
-      res.json({ ok: true, position: already + 1, alreadySubscribed: true });
-      return;
-    }
+  const payload: Record<string, string> = { email };
+  if (typeof req.body?.ref === 'string') {
+    payload['ref'] = req.body.ref.slice(0, 64);
+  }
+  if (typeof req.body?.locale === 'string') {
+    payload['locale'] = req.body.locale.slice(0, 10);
+  }
 
-    const record = {
-      email,
-      ts: new Date().toISOString(),
-      ref: typeof req.body?.ref === 'string' ? req.body.ref.slice(0, 64) : '',
-      ua: (req.headers['user-agent'] ?? '').toString().slice(0, 256),
-    };
-    appendFileSync(subscribersFile, JSON.stringify(record) + '\n', 'utf8');
-    res.json({ ok: true, position: existing.length + 1 });
+  try {
+    const { status, body } = await callApi('/waitlist', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'user-agent': (req.headers['user-agent'] ?? '').toString().slice(0, 256),
+      },
+      body: JSON.stringify(payload),
+    });
+    res.status(status).json(body ?? { ok: false, error: 'bad_upstream' });
   } catch {
-    res.status(500).json({ ok: false, error: 'server_error' });
+    res.status(502).json({ ok: false, error: 'upstream_unreachable' });
   }
 });
 
 /** Lightweight count, for any "N people waiting" UI. */
-app.get('/api/subscribe/count', (_req, res) => {
+app.get('/api/subscribe/count', async (_req, res) => {
   try {
-    res.json({ ok: true, count: readEmails().length });
+    const { body } = await callApi('/waitlist/count', { method: 'GET' });
+    const count =
+      body && typeof (body as { count?: unknown }).count === 'number'
+        ? (body as { count: number }).count
+        : 0;
+    res.json({ ok: true, count });
   } catch {
     res.json({ ok: true, count: 0 });
   }

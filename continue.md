@@ -16,7 +16,7 @@ initial ~285 kB raw / ~79 kB transfer, no budget errors.
 - SSR scaffold, design tokens, global styles ("Tactile & Gamified")
 - Home page (hero + three pillars: cocktails / events / group-up + CTA + footer)
 - Email waitlist end-to-end: `notify-form` → `SubscribeService` →
-  `POST /api/subscribe` in `src/server.ts` → append-only `subscribers.jsonl`
+  `POST /api/subscribe` in `src/server.ts` → proxied to **salut-api** → Postgres
 - SEO: `SeoService` (title/meta/canonical/JSON-LD), `robots.txt`, `sitemap.xml`
 - Legal: `pages/legal/impressum.*` + `datenschutz.*` (DSGVO, `noindex`)
 - Self-hosted Space Grotesk via `@fontsource` (no Google Fonts — DSGVO)
@@ -31,14 +31,14 @@ Public origin is centralised. **Staging = `https://salut.bown.at`**, launch =
 3. `public/robots.txt` — `Sitemap:` line
 4. `public/sitemap.xml` — `<loc>`
 5. `src/app/pages/legal/impressum.html` — the "Web" link
-6. Coolify — point the production domain, keep the `/data` volume
+6. Coolify — point the production domain (no volume needed)
 
 API base (for the future backend) is `api.salut.bown.at` → `api.salut.com`.
 Infra: Coolify `coolify.bown.at`, Coder `coder.bown.at`.
 
 ## What's next (see todo.md for the full list)
-1. **Deploy to Coolify** at `salut.bown.at` with a persistent `/data` volume;
-   smoke-test the form; confirm the volume survives a redeploy.
+1. **Deploy to Coolify** at `salut.bown.at` (no volume needed — the waitlist is
+   in salut-api); deploy salut-api first, then smoke-test the form.
 2. **Lighthouse ≥ 95** + submit sitemap to Search Console; confirm indexing.
 3. **Content**: final DE/EN copy, real imagery, `og-image.png`, favicons.
 4. **i18n** decision (DE + EN) and wiring.
@@ -56,5 +56,5 @@ Infra: Coolify `coolify.bown.at`, Coder `coder.bown.at`.
   trackers). Fonts are self-hosted on purpose.
 - **`@` in templates** → write `&#64;` (bare `@` is Angular control flow).
 - `DOCUMENT` imports from `@angular/core` in v21 (not `@angular/common`).
-- The `/data` volume is the **only** state — waitlist emails live there.
+- The landing is **stateless** now — waitlist emails live in salut-api/Postgres.
 - Don't touch the original Flutter app in `../Salut/` (read-only reference).

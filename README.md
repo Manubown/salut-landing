@@ -21,7 +21,8 @@ This repo is one of two:
 - **SSR + static prerender** via `@angular/ssr` (Express server in `src/server.ts`)
 - **SCSS design tokens** (`src/styles/_tokens.scss`) — the "Tactile & Gamified" system
 - **Self-hosted fonts** (`@fontsource/space-grotesk`) — no Google Fonts request (DSGVO)
-- Waitlist persistence: append-only **JSONL** on a `/data` volume (no database yet)
+- Waitlist persistence: proxied server-to-server to the **salut-api** service
+  (NestJS + Postgres). The browser stays same-origin; no local data volume.
 
 ## Quickstart
 
@@ -43,12 +44,13 @@ curl -s localhost:4000 | grep -i "<title>"   # should show the rendered title
 
 ```bash
 docker build -t salut-landing .
-docker run --rm -p 8080:80 -v salut-landing-data:/data salut-landing
-# -> http://localhost:8080  (waitlist emails persist in the named volume)
+docker run --rm -p 8080:80 -e WAITLIST_API_URL=https://api.salut.bown.at salut-landing
+# -> http://localhost:8080  (waitlist sign-ups proxy to salut-api)
 ```
 
-The image runs the SSR Node server on port 80 as a non-root user. The waitlist
-writes to `/data/subscribers.jsonl` (set `DATA_DIR`, defaults to `/data`).
+The image runs the SSR Node server on port 80 as a non-root user. Waitlist
+sign-ups are proxied server-to-server to `WAITLIST_API_URL` (the salut-api
+service); there is no local data volume.
 
 ## Project layout
 

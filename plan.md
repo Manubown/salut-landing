@@ -21,11 +21,11 @@ Browser ──► Coolify / Traefik (TLS) ──► salut-landing container (Nod
                           │ Angular SSR (renders HTML, hydrates)   │
                           │ Express (src/server.ts)                │
                           │   GET  *              → SSR/prerender  │
-                          │   POST /api/subscribe → waitlist JSONL │
+                          │   POST /api/subscribe → proxy to API   │
                           │   GET  /api/subscribe/count            │
                           └───────────────────┬───────────────────┘
                                               ▼
-                                   /data volume (subscribers.jsonl)
+                         salut-api (NestJS) ──Prisma──► Postgres
 ```
 
 Key decisions:
@@ -34,9 +34,9 @@ Key decisions:
   and handles the waitlist API. Best of SEO (fully rendered HTML) and dynamic
   (a real endpoint) without a separate backend.
 - **Standalone + signals + native control flow** — no NgModules.
-- **Waitlist = JSONL on a volume**, not a database. The landing stays a single
-  self-contained Dockerfile app, deployable today. The `POST /api/subscribe`
-  contract is the migration seam to Postgres in Phase 2.
+- **Waitlist stored in salut-api (Postgres)**, not in the landing. The landing's
+  `POST /api/subscribe` validates and proxies server-to-server to the API
+  (`WAITLIST_API_URL`); the browser stays same-origin. No local data volume.
 - **No third-party runtime assets.** Fonts self-hosted via `@fontsource`. This
   keeps us DSGVO-clean and removes a render-blocking dependency.
 - **One source of truth for the public origin**: `SITE_URL` in
@@ -50,7 +50,7 @@ Angular SSR skeleton, design tokens, Dockerfile, devcontainer, the 7 docs.
 ### Phase 1 — Landing + onboarding (current)
 - [x] Tactile & Gamified design system (tokens + global styles)
 - [x] Home page (hero, three pillars, CTA, footer)
-- [x] Email waitlist (form + `/api/subscribe` + JSONL persistence)
+- [x] Email waitlist (form + `/api/subscribe` → proxy to salut-api/Postgres)
 - [x] SEO baseline (SeoService, JSON-LD, robots.txt, sitemap.xml)
 - [x] Legal: Impressum + Datenschutz (Austrian, DSGVO)
 - [x] Self-hosted fonts
@@ -62,11 +62,11 @@ Angular SSR skeleton, design tokens, Dockerfile, devcontainer, the 7 docs.
 
 See [todo.md](./todo.md) for the granular checklist.
 
-### Phase 2 — Backend/API + auth (in salut-app's plan)
-NestJS + Postgres + Prisma; own auth. The waitlist migrates from JSONL to
-Postgres behind the **same** `POST /api/subscribe` contract — at most a small
-change to `src/server.ts` (or the endpoint moves to the API and the landing
-proxies it).
+### Phase 2 — Backend/API + auth (the `../salut-api` repo)
+**Brought forward:** the waitlist already persists to **salut-api** (NestJS +
+Postgres + Prisma) behind the same `POST /api/subscribe` contract — the landing
+proxies to it server-side. Still ahead this phase: own auth (email/password +
+Google/Apple, JWT/refresh), replacing the old Firebase-backed API.
 
 ### Phase 3 — App parity (in salut-app)
 Rebuild product features against the new API.
@@ -77,8 +77,8 @@ Rebuild product features against the new API.
 - Use **`expose`** (not host `ports`); Coolify's Traefik terminates TLS at the
   domain. `restart: unless-stopped`. (`docker-compose.yml` here is the reference
   shape; Coolify can also build the Dockerfile directly.)
-- **Persistent volume** mounted at `/data` for `subscribers.jsonl` — must
-  survive redeploys. This is the one piece of state; back it up.
+- **No persistent volume here** — the waitlist lives in salut-api/Postgres. Set
+  `WAITLIST_API_URL` (defaults to `https://api.salut.bown.at`).
 - Health: container serves `GET /` (SSR) on `:80`.
 
 | Environment | URL | Notes |
@@ -96,13 +96,13 @@ deliberately few):
 3. `public/robots.txt` → `Sitemap:` line
 4. `public/sitemap.xml` → `<loc>`
 5. `src/app/pages/legal/impressum.html` → the "Web" link
-6. Coolify: point the production domain at the app, keep the `/data` volume.
+6. Coolify: point the production domain at the app (no volume needed).
 
 (See [continue.md](./continue.md) for the exact line references.)
 
 ## Risks & mitigations
-- **Waitlist volume not persisted** → emails lost on redeploy. *Mitigation:*
-  named/persistent volume at `/data`; verify after first deploy; back up.
+- **API unreachable / down** → sign-ups fail (the proxy returns `502`).
+  *Mitigation:* deploy salut-api first; monitor its `/health`; back up its Postgres.
 - **SEO regressions** (client-only meta) → *Mitigation:* set all meta via
   `SeoService` in `ngOnInit` so it renders during prerender; CI Lighthouse check.
 - **DSGVO drift** (someone adds a CDN font / analytics) → *Mitigation:* documented
