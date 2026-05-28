@@ -44,11 +44,11 @@ curl -s localhost:4000 | grep -i "<title>"   # should show the rendered title
 
 ```bash
 docker build -t salut-landing .
-docker run --rm -p 8080:80 -e WAITLIST_API_URL=https://api.salut.bown.at salut-landing
+docker run --rm -p 8080:4000 -e WAITLIST_API_URL=https://api.salut.bown.at salut-landing
 # -> http://localhost:8080  (waitlist sign-ups proxy to salut-api)
 ```
 
-The image runs the SSR Node server on port 80 as a non-root user. Waitlist
+The image runs the SSR Node server on port 4000 as a non-root user. Waitlist
 sign-ups are proxied server-to-server to `WAITLIST_API_URL` (the salut-api
 service); there is no local data volume.
 
@@ -70,7 +70,7 @@ src/
     pages/home/                    the landing page (hero, features, CTA, footer)
     pages/legal/                   Impressum + Datenschutz (Austrian legal pages)
 public/                            robots.txt, sitemap.xml, favicon
-Dockerfile  docker-compose.yml     Coolify deploy (Dockerfile app, expose :80)
+Dockerfile  docker-compose.yml     Coolify deploy (Dockerfile app, expose :4000)
 .devcontainer/                     Coder / VS Code dev container (Node 22)
 ```
 

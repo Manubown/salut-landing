@@ -15,7 +15,7 @@ risk and release cadence.
 ## Architecture
 
 ```
-Browser ──► Coolify / Traefik (TLS) ──► salut-landing container (Node, :80)
+Browser ──► Coolify / Traefik (TLS) ──► salut-landing container (Node, :4000)
                                               │
                           ┌───────────────────┴───────────────────┐
                           │ Angular SSR (renders HTML, hydrates)   │
@@ -79,7 +79,7 @@ Rebuild product features against the new API.
   shape; Coolify can also build the Dockerfile directly.)
 - **No persistent volume here** — the waitlist lives in salut-api/Postgres. Set
   `WAITLIST_API_URL` (defaults to `https://api.salut.bown.at`).
-- Health: container serves `GET /` (SSR) on `:80`.
+- Health: container serves `GET /` (SSR) on `:4000`.
 
 | Environment | URL | Notes |
 |---|---|---|

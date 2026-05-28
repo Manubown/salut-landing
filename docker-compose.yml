@@ -13,10 +13,10 @@ services:
     build: .
     restart: unless-stopped
     expose:
-      - "80"
+      - "4000"
     environment:
       NODE_ENV: production
-      PORT: "80"
+      PORT: "4000"
       HOST: 0.0.0.0
       # Where the waitlist API lives. Staging api.salut.bown.at, launch
       # api.salut.com. Reached server-to-server (browser stays same-origin).

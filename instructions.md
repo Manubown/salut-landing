@@ -94,7 +94,8 @@ npm start          # ng serve -> http://localhost:4200 (port 4200 is forwarded)
 
 ## Deploy (Coolify on Hetzner)
 1. Push to `main`. Coolify builds the `Dockerfile` and deploys.
-2. App uses **`expose: 80`**; Traefik terminates TLS at the domain.
+2. App listens on **`4000`** (`expose: 4000`); Traefik terminates TLS at the
+   domain and routes to it. Set Coolify's "Ports Exposes" to **4000**.
 3. **No volume needed** — the waitlist lives in salut-api/Postgres. Deploy
    salut-api first so sign-ups have somewhere to go.
 4. Set domain: **`salut.bown.at`** (staging) now. At launch, see the domain
@@ -104,7 +105,7 @@ npm start          # ng serve -> http://localhost:4200 (port 4200 is forwarded)
 ### Docker locally
 ```bash
 docker build -t salut-landing .
-docker run --rm -p 8080:80 -e WAITLIST_API_URL=https://api.salut.bown.at salut-landing
+docker run --rm -p 8080:4000 -e WAITLIST_API_URL=https://api.salut.bown.at salut-landing
 ```
 
 ## The waitlist endpoint (contract)
