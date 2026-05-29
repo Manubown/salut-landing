@@ -14,8 +14,8 @@
  *   - websiteId: the UUID Umami assigns to the site
  */
 export const UMAMI: { host: string; websiteId: string } = {
-  host: '',
-  websiteId: '',
+  host: 'https://umami.bown.at',
+  websiteId: '73af99a9-8ad6-4bb1-8cb7-a465bd45cd33',
 };
 
 /** Umami origin with any trailing slash stripped, or '' when unconfigured. */
