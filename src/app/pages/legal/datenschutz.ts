@@ -10,7 +10,7 @@ import { SeoService } from '../../core/seo/seo.service';
 })
 export class Datenschutz implements OnInit {
   private readonly seo = inject(SeoService);
-  protected readonly stand = '28.05.2026';
+  protected readonly stand = '29.05.2026';
 
   ngOnInit(): void {
     this.seo.apply({

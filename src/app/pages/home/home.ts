@@ -46,13 +46,33 @@ export class Home implements OnInit {
         'Salut is your companion for great nights out: discover cocktail recipes worth trying, find the hottest events in your region, and group up with friends to go together. Join the waitlist.',
       path: '/',
     });
+    // Organization + WebSite as one @graph, cross-linked via @id (publisher).
+    // This is the structured-data pattern Google prefers for a brand site and
+    // is what surfaces the knowledge-panel / logo. inLanguage tracks the
+    // current content language (English today; per-locale once i18n lands).
     this.seo.setJsonLd({
       '@context': 'https://schema.org',
-      '@type': 'WebSite',
-      name: 'Salut',
-      url: `${SITE_URL}/`,
-      description:
-        'Discover cocktail recipes and the hottest local events, then group up with friends to go together.',
+      '@graph': [
+        {
+          '@type': 'Organization',
+          '@id': `${SITE_URL}/#organization`,
+          name: 'Salut',
+          url: `${SITE_URL}/`,
+          logo: `${SITE_URL}/icon-512.png`,
+          description:
+            'Salut helps you discover cocktail recipes worth trying, find the hottest events in your region, and group up with friends to go together.',
+        },
+        {
+          '@type': 'WebSite',
+          '@id': `${SITE_URL}/#website`,
+          name: 'Salut',
+          url: `${SITE_URL}/`,
+          inLanguage: 'en',
+          publisher: { '@id': `${SITE_URL}/#organization` },
+          description:
+            'Discover cocktail recipes and the hottest local events, then group up with friends to go together.',
+        },
+      ],
     });
   }
 }

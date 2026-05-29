@@ -16,4 +16,9 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/legal/datenschutz').then((m) => m.Datenschutz),
     title: 'Datenschutzerklärung — Salut',
   },
+  {
+    path: '**',
+    loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFound),
+    title: 'Page not found — Salut',
+  },
 ];

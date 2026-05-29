@@ -6,6 +6,7 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { umamiOrigin } from './app/core/analytics/analytics.config';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -21,6 +22,47 @@ const UPSTREAM_TIMEOUT_MS = 8000;
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
+
+// Security + privacy headers on every response. The CSP is self-only apart
+// from the self-hosted Umami origin (no third-party trackers/CDNs — see DSGVO
+// stance): scripts/styles allow 'unsafe-inline' because Angular SSR + hydration
+// (withEventReplay) injects an inline bootstrap script and inlines component
+// <style> blocks. Tightening script-src to a per-request nonce is the follow-up
+// for a perfect Best-Practices score. Permissions-Policy also opts out of
+// FLoC/Topics. When Umami is configured, its origin is allowed to serve the
+// tracker (script-src) and receive the cookieless beacon (connect-src).
+const analyticsOrigin = umamiOrigin();
+const scriptSrc = ["'self'", "'unsafe-inline'", analyticsOrigin].filter(Boolean).join(' ');
+const connectSrc = ["'self'", analyticsOrigin].filter(Boolean).join(' ');
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "img-src 'self' data:",
+  "font-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  `script-src ${scriptSrc}`,
+  `connect-src ${connectSrc}`,
+  'upgrade-insecure-requests',
+].join('; ');
+
+app.use((_req, res, next) => {
+  res.setHeader('Content-Security-Policy', CONTENT_SECURITY_POLICY);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), interest-cohort=(), browsing-topics=()',
+  );
+  res.setHeader(
+    'Strict-Transport-Security',
+    'max-age=31536000; includeSubDomains',
+  );
+  next();
+});
 
 app.use(express.json({ limit: '8kb' }));
 

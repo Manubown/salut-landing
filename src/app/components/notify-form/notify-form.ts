@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SubscribeService } from '../../core/api/subscribe.service';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -13,6 +14,7 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 })
 export class NotifyForm {
   private readonly subscribeService = inject(SubscribeService);
+  private readonly analytics = inject(AnalyticsService);
 
   protected readonly email = new FormControl('', {
     nonNullable: true,
@@ -39,6 +41,9 @@ export class NotifyForm {
       next: (res) => {
         this.position.set(res.position ?? null);
         this.status.set('success');
+        this.analytics.track('waitlist-signup', {
+          alreadySubscribed: res.alreadySubscribed ?? false,
+        });
       },
       error: () => {
         this.errorMsg.set('Something went wrong on our end. Please try again.');
