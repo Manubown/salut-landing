@@ -4,9 +4,9 @@
     <div>
       <strong>You're on the list!</strong>
       @if (position(); as pos) {
-        <p>You're <b>#{{ pos }}</b> in line — we'll email you the moment Salut opens.</p>
+        <p>You're <b>#{{ pos }}</b> on the list — we'll email you the moment Events goes live.</p>
       } @else {
-        <p>We'll email you the moment Salut opens.</p>
+        <p>We'll email you the moment Events goes live.</p>
       }
     </div>
   </div>
@@ -36,7 +36,7 @@
     } @else if (status() === 'error') {
       <p class="notify__hint notify__hint--error" role="alert">{{ errorMsg() }}</p>
     } @else {
-      <p class="notify__hint">No spam — just one email when we launch. Unsubscribe anytime.</p>
+      <p class="notify__hint">No spam — just one email when Events goes live. Unsubscribe anytime.</p>
     }
   </form>
 }

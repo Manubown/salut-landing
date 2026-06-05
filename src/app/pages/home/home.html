@@ -1,4 +1,4 @@
-<a class="skip-link" href="#join">Skip to sign-up</a>
+<a class="skip-link" href="#features">Skip to content</a>
 
 <header class="site-header">
   <div class="container site-header__inner">
@@ -6,65 +6,105 @@
       <span class="brand__mark" aria-hidden="true">S</span>
       <span class="brand__word">Salut</span>
     </a>
-    <a class="btn site-header__cta" href="#join">Get early access</a>
+    <nav class="site-header__actions" aria-label="Primary">
+      <a class="site-header__link" href="#features">Features</a>
+      <a class="btn btn--primary site-header__cta" [href]="appUrl" target="_blank" rel="noopener">Open app</a>
+    </nav>
   </div>
 </header>
 
 <main id="top">
   <!-- HERO -->
   <section class="hero">
+    <div class="hero__aurora" aria-hidden="true"></div>
     <div class="container hero__grid">
-      <div class="hero__copy">
-        <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span> Launching soon · DE &amp; EN</span>
+      <div class="hero__copy reveal" style="--i: 0">
+        <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span> Live now · Free · No app store</span>
         <h1 class="hero__title">
-          Great cocktails.<br />
-          The <span class="hl">hottest events</span>.<br />
-          Your whole crew.
+          Your whole night out,<br />
+          <span class="hl">one tap away.</span>
         </h1>
         <p class="hero__lede">
-          Salut is the companion for your nights out — discover cocktail recipes worth trying,
-          find what's actually happening in your region, and group up with friends to go together.
+          Salut is live in your browser — track your drinks and BAC, raid 15 cocktail recipes,
+          climb the leaderboard and play party games with your crew. Add it to your home screen
+          and it opens just like a native app.
         </p>
 
-        <div id="join" class="hero__join">
-          <salut-notify-form />
+        <div class="hero__cta">
+          <a class="btn btn--primary btn--lg" [href]="appUrl" target="_blank" rel="noopener">
+            Open Salut <span aria-hidden="true">→</span>
+          </a>
+          <a class="btn btn--lg" href="#features">Explore features</a>
         </div>
 
         <ul class="hero__proof">
-          <li>🍸 Hundreds of recipes at launch</li>
+          <li>Free forever</li>
           <li aria-hidden="true">·</li>
-          <li>No card. No spam.</li>
+          <li>iPhone &amp; Android</li>
+          <li aria-hidden="true">·</li>
+          <li>Nothing to download</li>
         </ul>
       </div>
 
-      <div class="hero__art" aria-hidden="true">
-        <article class="float-card float-card--recipe">
-          <span class="float-card__tag">Recipe</span>
-          <div class="glass">🍹</div>
-          <h3>Spritz Salut</h3>
-          <p>Prosecco · Aperol · soda · orange</p>
-        </article>
+      <!-- Decorative mock of the live app screen -->
+      <div class="hero__art reveal" style="--i: 1" aria-hidden="true">
+        <div class="phone phone--app">
+          <div class="phone__notch"></div>
+          <div class="phone__screen">
+            <div class="appbar"><span class="appbar__word">Salut</span></div>
 
-        <article class="float-card float-card--event">
-          <span class="float-card__tag float-card__tag--accent">Tonight · 2.1 km</span>
-          <h3>Rooftop Sessions</h3>
-          <p>Live DJ · 312 going</p>
-          <div class="avatars"><span></span><span></span><span></span><span>+</span></div>
-        </article>
+            <div class="bac">
+              <span class="bac__label">Tonight</span>
+              <div class="bac__readout"><b>0.62</b><span>‰</span></div>
+              <div class="gauge"><span style="--p: 56%"></span></div>
+              <p class="bac__meta">Sober by <b>02:40</b> · burning 0.13‰/h</p>
+            </div>
 
-        <article class="float-card float-card--gauge">
-          <span class="float-card__tag">Stay safe</span>
-          <div class="gauge"><span style="--p: 38%"></span></div>
-          <p>Know your limit with the built-in BAC meter.</p>
-        </article>
+            <div class="drink-row">
+              <span class="drink-row__ic">🍺</span>
+              <span class="drink-row__name">Lager · 0.5 L</span>
+              <span class="drink-row__time">23:14</span>
+            </div>
+            <div class="drink-row">
+              <span class="drink-row__ic">🍸</span>
+              <span class="drink-row__name">Negroni</span>
+              <span class="drink-row__time">23:46</span>
+            </div>
+
+            <div class="tabbar">
+              <span class="tabbar__ic">⌂</span>
+              <span class="tabbar__ic">☰</span>
+              <span class="tabbar__fab">＋</span>
+              <span class="tabbar__ic">▦</span>
+              <span class="tabbar__ic">◍</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- FEATURES -->
-  <section class="section features">
+  <!-- HOW IT WORKS — the core loop -->
+  <section class="section how reveal">
     <div class="container">
-      <span class="eyebrow">What's inside</span>
+      <span class="eyebrow">How a night with Salut goes</span>
+      <h2 class="section__title">Log it. Watch it. Win the night.</h2>
+      <ol class="loop">
+        @for (s of loop; track s.n) {
+          <li class="loop__step">
+            <span class="loop__n" aria-hidden="true">{{ s.n }}</span>
+            <h3>{{ s.title }}</h3>
+            <p>{{ s.body }}</p>
+          </li>
+        }
+      </ol>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="section features reveal">
+    <div class="container">
+      <span class="eyebrow">What's inside — and already live</span>
       <h2 class="section__title">Everything for the night, in one place.</h2>
       <div class="feature-grid">
         @for (f of features; track f.title) {
@@ -78,15 +118,68 @@
     </div>
   </section>
 
-  <!-- FINAL CTA -->
-  <section class="section cta">
+  <!-- HOME SCREEN — benefit, not instructions (the app offers the prompt) -->
+  <section id="install" class="section install reveal">
+    <div class="container install__grid">
+      <div class="install__art" aria-hidden="true">
+        <div class="phone phone--home">
+          <div class="phone__notch"></div>
+          <div class="phone__screen phone__screen--home">
+            <span class="home-time">9:41</span>
+            <div class="home-grid">
+              <span class="home-app"></span>
+              <span class="home-app"></span>
+              <span class="home-app"></span>
+              <span class="home-app"></span>
+              <figure class="home-app home-app--salut">
+                <img src="app-icon.png" alt="" width="60" height="60" />
+                <figcaption>Salut</figcaption>
+              </figure>
+              <span class="home-app"></span>
+              <span class="home-app"></span>
+              <span class="home-app"></span>
+              <span class="home-app"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="install__copy">
+        <span class="eyebrow">Make it feel native</span>
+        <h2 class="section__title">Lives on your home screen.</h2>
+        <p class="install__lede">
+          Salut is a progressive web app — open it once and add it to your home screen, and it
+          launches full-screen with its own icon. No store, no download, no updates to chase.
+        </p>
+
+        <ul class="install__benefits">
+          @for (b of benefits; track b.text) {
+            <li>
+              <span class="install__benefit-ic" aria-hidden="true">{{ b.icon }}</span>
+              {{ b.text }}
+            </li>
+          }
+        </ul>
+
+        <a class="btn btn--primary btn--lg" [href]="appUrl" target="_blank" rel="noopener">
+          Open Salut <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT'S NEXT — events + waitlist -->
+  <section class="section cta reveal">
     <div class="container container--narrow cta__inner">
-      <h2 class="section__title">Be first through the door.</h2>
+      <span class="eyebrow">On the way</span>
+      <h2 class="section__title">Events are coming to Vienna.</h2>
       <p class="cta__lede">
-        We're opening Salut to a first group soon. Drop your email and you'll be the first to know —
-        plus a few founding-member perks for the early crowd.
+        Next up: discover what's on tonight, browse by genre, see which friends are going and rally a crew.
+        Drop your email and you'll be first to know when it lands in your city.
       </p>
-      <salut-notify-form />
+      <div id="join">
+        <salut-notify-form />
+      </div>
     </div>
   </section>
 </main>
@@ -94,7 +187,8 @@
 <footer class="site-footer">
   <div class="container site-footer__inner">
     <span class="brand"><span class="brand__mark" aria-hidden="true">S</span> Salut</span>
-    <nav class="site-footer__links" aria-label="Rechtliches">
+    <nav class="site-footer__links" aria-label="Footer">
+      <a [href]="appUrl" target="_blank" rel="noopener">Open app</a>
       <a routerLink="/impressum">Impressum</a>
       <a routerLink="/datenschutz">Datenschutz</a>
     </nav>
