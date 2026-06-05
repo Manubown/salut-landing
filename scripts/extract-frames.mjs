@@ -43,6 +43,29 @@ function has(cmd) {
   }
 }
 
+// Prefer a system binary; otherwise fall back to the static npm packages so the
+// pipeline runs with no manual ffmpeg install.
+let FFMPEG = 'ffmpeg';
+let FFPROBE = 'ffprobe';
+
+async function resolveBinaries() {
+  if (!has(FFMPEG)) {
+    try {
+      const m = await import('ffmpeg-static');
+      const p = m.default ?? m;
+      if (typeof p === 'string') FFMPEG = p;
+    } catch { /* package not installed */ }
+  }
+  if (!has(FFPROBE)) {
+    try {
+      const m = await import('ffprobe-static');
+      const p = m.default?.path ?? m.path;
+      if (typeof p === 'string') FFPROBE = p;
+    } catch { /* package not installed */ }
+  }
+  return has(FFMPEG) && has(FFPROBE);
+}
+
 function parseArgs(argv) {
   const opts = { ...DEFAULTS, name: null, input: null };
   for (let i = 0; i < argv.length; i++) {
@@ -57,7 +80,7 @@ function parseArgs(argv) {
 }
 
 function durationSeconds(file) {
-  const out = execFileSync('ffprobe', [
+  const out = execFileSync(FFPROBE, [
     '-v', 'error',
     '-show_entries', 'format=duration',
     '-of', 'default=noprint_wrappers=1:nokey=1',
@@ -79,16 +102,17 @@ function extract(file, { name, frames, width, quality }) {
   const scale = `scale=${width}:-2:flags=lanczos`;
 
   console.log(`• ${name}: ${dur.toFixed(1)}s → ~${frames} frames @ ${width}px`);
-  execFileSync('ffmpeg', [
+  execFileSync(FFMPEG, [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-i', file,
     '-vf', `fps=${fps.toFixed(4)},${scale}`,
-    '-q:v', String(quality),
+    '-c:v', 'libwebp', '-quality', String(quality),
+    '-f', 'image2', // force a numbered sequence (a .webp output otherwise picks the animated muxer)
     join(outDir, 'frame-%04d.webp'),
   ], { stdio: 'inherit' });
 
   // Poster: a still from the middle of the clip (the start is often blank).
-  execFileSync('ffmpeg', [
+  execFileSync(FFMPEG, [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-ss', (dur * 0.5).toFixed(2),
     '-i', file,
@@ -118,9 +142,9 @@ function extract(file, { name, frames, width, quality }) {
   console.log(`✓ ${name}: ${list.length} frames → public/seq/${name}/`);
 }
 
-function main() {
-  if (!has('ffmpeg') || !has('ffprobe')) {
-    fail('ffmpeg/ffprobe not found on PATH. Install from https://ffmpeg.org/download.html');
+async function main() {
+  if (!(await resolveBinaries())) {
+    fail('ffmpeg/ffprobe not found. Install ffmpeg, or `npm i -D ffmpeg-static ffprobe-static`.');
   }
 
   const opts = parseArgs(process.argv.slice(2));
@@ -144,4 +168,4 @@ function main() {
   console.log(`\nDone. Wire a sequence into an act with its manifest's "frames" array.`);
 }
 
-main();
+main().catch((err) => fail(err?.message ?? String(err)));

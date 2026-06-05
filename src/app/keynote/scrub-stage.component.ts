@@ -77,6 +77,8 @@ export class ScrubStage {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const host = this.host().nativeElement;
+    const urls = this.frames();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const sizeCanvas = () => {
       const rect = canvas.getBoundingClientRect();
@@ -84,62 +86,92 @@ export class ScrubStage {
       canvas.height = Math.max(1, Math.round(rect.height * dpr));
     };
 
-    const urls = this.frames();
-    const images = urls.length ? await this.preload(urls) : [];
-    const count = images.length || this.frameCount();
-
+    let images: HTMLImageElement[] = [];
     let progress = 0;
     const render = () => {
       const w = canvas.width;
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
-      const i = Math.max(0, Math.min(count - 1, Math.round(progress * (count - 1))));
-      if (images.length) this.drawCover(ctx, images[i], w, h);
-      else this.drawSynthetic(ctx, w, h, progress);
-      this.host().nativeElement.classList.add('is-painted');
+      if (images.length) {
+        const i = Math.max(0, Math.min(images.length - 1, Math.round(progress * (images.length - 1))));
+        this.drawCover(ctx, images[i], w, h);
+        host.classList.add('is-painted');
+      } else if (!urls.length) {
+        this.drawSynthetic(ctx, w, h, progress);
+        host.classList.add('is-painted');
+      }
+      // Real frames not yet loaded → leave transparent so the poster shows.
     };
 
     sizeCanvas();
     render();
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
-      progress = 0.5;
-      render();
-      const onResize = () => {
-        sizeCanvas();
+
+    const activate = async () => {
+      if (reduced) {
+        // Static: synthetic mid-frame, or (real mode) just keep the poster.
+        if (!urls.length) {
+          progress = 0.5;
+          render();
+        }
+        const onResize = () => {
+          sizeCanvas();
+          render();
+        };
+        window.addEventListener('resize', onResize, { passive: true });
+        this.destroyRef.onDestroy(() => window.removeEventListener('resize', onResize));
+        return;
+      }
+
+      if (urls.length) {
+        images = await this.preload(urls);
         render();
-      };
-      window.addEventListener('resize', onResize, { passive: true });
-      this.destroyRef.onDestroy(() => window.removeEventListener('resize', onResize));
-      return;
+      }
+
+      const [{ gsap }, { ScrollTrigger }] = await Promise.all([
+        import('gsap'),
+        import('gsap/ScrollTrigger'),
+      ]);
+      gsap.registerPlugin(ScrollTrigger);
+
+      const trigger = ScrollTrigger.create({
+        trigger: host,
+        pin: this.stage().nativeElement,
+        start: 'top top',
+        end: () => `+=${Math.round(window.innerHeight * this.scrollLength())}`,
+        scrub: 0.4,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          progress = self.progress;
+          render();
+        },
+        onRefresh: () => {
+          sizeCanvas();
+          render();
+        },
+      });
+      this.destroyRef.onDestroy(() => trigger.kill());
+    };
+
+    // Defer the heavy frame preload until the stage nears the viewport.
+    // Synthetic mode is cheap, so it activates immediately.
+    if (urls.length && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver(
+        (entries, obs) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            obs.disconnect();
+            void activate();
+          }
+        },
+        { rootMargin: '150% 0px' },
+      );
+      io.observe(host);
+      this.destroyRef.onDestroy(() => io.disconnect());
+    } else {
+      void activate();
     }
-
-    const [{ gsap }, { ScrollTrigger }] = await Promise.all([
-      import('gsap'),
-      import('gsap/ScrollTrigger'),
-    ]);
-    gsap.registerPlugin(ScrollTrigger);
-
-    const trigger = ScrollTrigger.create({
-      trigger: this.host().nativeElement,
-      pin: this.stage().nativeElement,
-      start: 'top top',
-      end: () => `+=${Math.round(window.innerHeight * this.scrollLength())}`,
-      scrub: 0.4,
-      anticipatePin: 1,
-      invalidateOnRefresh: true,
-      onUpdate: (self) => {
-        progress = self.progress;
-        render();
-      },
-      onRefresh: () => {
-        sizeCanvas();
-        render();
-      },
-    });
-
-    this.destroyRef.onDestroy(() => trigger.kill());
   }
 
   private preload(urls: readonly string[]): Promise<HTMLImageElement[]> {
@@ -229,7 +261,8 @@ export class ScrubStage {
     ctx.fillRect(w / 2 - 18 * u, h - 6 * u, 36 * u * p, 0.7 * u);
   }
 
-  /** BAC act — promille count-up + a blue→red gauge filling with scroll. */
+  /** BAC act — an animated dial: the needle sweeps, the arc climbs blue→red,
+   *  the promille glows and counts up, drinks pop in, and the status escalates. */
   private drawBar(
     ctx: CanvasRenderingContext2D,
     sx: number,
@@ -239,28 +272,110 @@ export class ScrubStage {
     u: number,
     p: number,
   ): void {
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#fff';
-    ctx.font = `700 ${15 * u}px "Space Grotesk", system-ui, sans-serif`;
-    ctx.fillText((p * 1.18).toFixed(2), sx + sw / 2, sy + sh * 0.44);
-    ctx.fillStyle = 'rgba(245,242,251,0.5)';
-    ctx.font = `600 ${3.2 * u}px system-ui, sans-serif`;
-    ctx.fillText('‰  ·  promille', sx + sw / 2, sy + sh * 0.52);
+    const level = Math.min(1, Math.pow(p, 0.8)); // climbs fast, then eases
+    const promille = level * 1.4;
+    const cx = sx + sw / 2;
+    const cy = sy + sh * 0.43;
+    const R = Math.min(sw * 0.36, sh * 0.2);
+    const lw = R * 0.2;
+    const a0 = Math.PI * 0.75;
+    const sweep = Math.PI * 1.5;
+    const col = this.ramp(level);
 
-    const gw = sw * 0.74;
-    const gx = sx + (sw - gw) / 2;
-    const gy = sy + sh * 0.64;
-    const gh = 2.4 * u;
-    const grad = ctx.createLinearGradient(gx, 0, gx + gw, 0);
-    grad.addColorStop(0, '#2f80ed');
-    grad.addColorStop(0.5, '#ffd23f');
-    grad.addColorStop(1, '#eb2f4b');
-    ctx.fillStyle = grad;
-    this.path(ctx, gx, gy, gw, gh, gh / 2);
+    // Warm the room as the level rises
+    ctx.fillStyle = `rgba(235,47,75,${(0.06 * level).toFixed(3)})`;
+    ctx.fillRect(sx, sy, sw, sh);
+
+    // Pulsing glow behind the dial
+    const pulse = 0.5 + 0.5 * Math.sin(p * Math.PI * 6);
+    ctx.save();
+    ctx.globalAlpha = 0.08 + 0.14 * level;
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * (1 + 0.08 * pulse), 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+
+    // Segmented arc: faint track + multi-colour value sweep
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'butt';
+    const segs = 60;
+    for (let s = 0; s < segs; s++) {
+      const t0 = s / segs;
+      const t1 = (s + 1) / segs;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, a0 + sweep * t0, a0 + sweep * t1 + 0.006);
+      ctx.strokeStyle = t1 <= level ? this.ramp(t1) : 'rgba(255,255,255,0.07)';
+      ctx.stroke();
+    }
+
+    // Needle + hub
+    const ang = a0 + sweep * level;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(ang);
     ctx.fillStyle = '#fff';
-    const mx = gx + gw * Math.min(1, p * 1.05);
-    ctx.fillRect(mx - 0.4 * u, gy - 1 * u, 0.8 * u, gh + 2 * u);
+    ctx.beginPath();
+    ctx.moveTo(0, -lw * 0.2);
+    ctx.lineTo(R * 0.94, 0);
+    ctx.lineTo(0, lw * 0.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, lw * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(cx, cy, lw * 0.28, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Promille readout (glow intensifies with level)
+    ctx.textAlign = 'center';
+    ctx.save();
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 10 + 26 * level;
+    ctx.fillStyle = '#fff';
+    ctx.font = `700 ${12 * u}px "Space Grotesk", system-ui, sans-serif`;
+    ctx.fillText(promille.toFixed(2), cx, cy + R * 0.46);
+    ctx.restore();
+    ctx.fillStyle = 'rgba(245,242,251,0.55)';
+    ctx.font = `700 ${2.7 * u}px "Space Grotesk", system-ui, sans-serif`;
+    ctx.fillText('‰  P R O M I L L E', cx, cy + R * 0.46 + 4.2 * u);
+
+    // Drinks popping in as the night goes on
+    const icons = ['🍺', '🍸', '🥃', '🍷'];
+    const thr = [0.1, 0.36, 0.6, 0.84];
+    const spread = sw * 0.6;
+    const x0 = cx - spread / 2;
+    const iy = sy + sh * 0.8;
+    for (let i = 0; i < icons.length; i++) {
+      const raw = (p - thr[i]) / 0.09;
+      if (raw <= 0) continue;
+      const pop = this.easeOutBack(Math.min(1, raw));
+      const size = 5.4 * u * pop;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, raw * 1.5);
+      ctx.font = `${size}px serif`;
+      ctx.fillText(icons[i], x0 + spread * (i / (icons.length - 1)), iy + size * 0.35);
+      ctx.restore();
+    }
+
+    // Escalating status
+    let status = 'Tracking your night…';
+    let warn = false;
+    if (level > 0.82) {
+      status = '⚠  Over the limit · sober ~02:40';
+      warn = true;
+    } else if (level > 0.55) {
+      status = 'Pace yourself';
+    } else if (level > 0.22) {
+      status = 'Feeling it';
+    }
+    ctx.fillStyle = warn ? '#ff8a7a' : 'rgba(245,242,251,0.6)';
+    ctx.font = `600 ${3 * u}px system-ui, sans-serif`;
+    ctx.fillText(status, cx, sy + sh * 0.92);
   }
 
   /** Games act — a lucky wheel spinning ~2 turns across the scroll. */
@@ -372,5 +487,35 @@ export class ScrubStage {
     ctx.arcTo(x, y + h, x, y, rr);
     ctx.arcTo(x, y, x + w, y, rr);
     ctx.closePath();
+  }
+
+  /** Blue → green → amber → red ramp for the BAC dial. */
+  private ramp(t: number): string {
+    const stops: [number, number[]][] = [
+      [0.0, [47, 128, 237]],
+      [0.35, [111, 207, 151]],
+      [0.6, [255, 210, 63]],
+      [0.8, [255, 122, 47]],
+      [1.0, [235, 47, 75]],
+    ];
+    const x = Math.max(0, Math.min(1, t));
+    for (let i = 1; i < stops.length; i++) {
+      if (x <= stops[i][0]) {
+        const [t0, c0] = stops[i - 1];
+        const [t1, c1] = stops[i];
+        const f = (x - t0) / (t1 - t0);
+        return `rgb(${Math.round(c0[0] + (c1[0] - c0[0]) * f)},${Math.round(
+          c0[1] + (c1[1] - c0[1]) * f,
+        )},${Math.round(c0[2] + (c1[2] - c0[2]) * f)})`;
+      }
+    }
+    return 'rgb(235,47,75)';
+  }
+
+  /** Overshooting ease for the drink "pop-in". */
+  private easeOutBack(t: number): number {
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
   }
 }
