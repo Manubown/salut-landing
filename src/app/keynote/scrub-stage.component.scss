@@ -1,0 +1,45 @@
+:host { display: block; }
+
+.scrub { position: relative; }
+
+/* The pinned, full-viewport stage. GSAP fixes this in place while the canvas
+   scrubs; without JS it's just a tall, styled section showing the caption. */
+.scrub__stage {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow: hidden;
+  /* Fallback look before/without the canvas paint (no-JS, first frame). */
+  background: radial-gradient(120% 70% at 50% 0%, #221645 0%, #140d22 55%, #0c0717 100%);
+}
+
+.scrub__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.scrub__poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity var(--dur-3, 420ms) var(--ease-out, ease);
+}
+.is-painted .scrub__poster { opacity: 0; }
+
+/* Captions sit in a bottom band so they never cover the centered device.
+   Wrapper ignores pointer events; interactive children opt back in. */
+.scrub__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: clamp(32px, 8vh, 90px) var(--s-5, 24px);
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(8, 4, 18, .72) 12%, transparent);
+}
