@@ -97,7 +97,9 @@
   content: '';
   position: absolute;
   border-radius: 50%;
-  filter: blur(90px);
+  /* Large-radius blur is the priciest always-on GPU cost on this page; keep it
+     moderate. */
+  filter: blur(64px);
   opacity: .5;
 }
 .hero__aurora::before {
