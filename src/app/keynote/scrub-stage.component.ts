@@ -139,7 +139,11 @@ export class ScrubStage {
         trigger: host,
         pin: this.stage().nativeElement,
         start: 'top top',
-        end: () => `+=${Math.round(window.innerHeight * this.scrollLength())}`,
+        // Shorter pin on phones so the act doesn't drag (recomputed on refresh).
+        end: () =>
+          `+=${Math.round(
+            window.innerHeight * this.scrollLength() * (window.innerWidth < 768 ? 0.6 : 1),
+          )}`,
         scrub: 0.4,
         anticipatePin: 1,
         invalidateOnRefresh: true,

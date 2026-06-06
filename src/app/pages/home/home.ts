@@ -9,11 +9,18 @@ import {
 import { RouterLink } from '@angular/router';
 import { NotifyForm } from '../../components/notify-form/notify-form';
 import { ScrubStage } from '../../keynote/scrub-stage.component';
+import { DrinkGlass, GlassType } from '../../keynote/drink-glass.component';
+import { ClickPopDirective } from '../../keynote/click-pop.directive';
 import { SeoService, SITE_URL } from '../../core/seo/seo.service';
 
 interface Cocktail {
   name: string;
-  grad: string;
+  base: string;
+  glass: GlassType;
+  /** Liquid tint for the glass illustration. */
+  color: string;
+  /** Short description that floats above the card. */
+  blurb: string;
 }
 
 interface Chip {
@@ -29,7 +36,7 @@ export const APP_URL = 'https://salut-web.bressler.at';
 
 @Component({
   selector: 'salut-home',
-  imports: [NotifyForm, RouterLink, ScrubStage],
+  imports: [NotifyForm, RouterLink, ScrubStage, DrinkGlass, ClickPopDirective],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,14 +48,14 @@ export class Home implements OnInit {
   protected readonly year = new Date().getFullYear();
   protected readonly appUrl = APP_URL;
 
-  /** A taste of the recipe library (real names + glass gradients from the app). */
+  /** A taste of the recipe library (real names + glasses from the app). */
   protected readonly cocktails: Cocktail[] = [
-    { name: 'Negroni', grad: 'linear-gradient(150deg,#E0533C,#A11D1A)' },
-    { name: 'Aperol Spritz', grad: 'linear-gradient(150deg,#FF8A3D,#E84E1B)' },
-    { name: 'Margarita', grad: 'linear-gradient(150deg,#E8CF5A,#B8902A)' },
-    { name: 'Espresso Martini', grad: 'linear-gradient(150deg,#5A3A24,#241108)' },
-    { name: 'Mojito', grad: 'linear-gradient(150deg,#7FC56A,#3E7E32)' },
-    { name: 'Cosmopolitan', grad: 'linear-gradient(150deg,#F0537A,#B0203F)' },
+    { name: 'Negroni', base: 'Gin', glass: 'Rocks', color: '#E0533C', blurb: 'Italian classic' },
+    { name: 'Aperol Spritz', base: 'Aperitivo', glass: 'Wine', color: '#FF8A3D', blurb: 'Bright & bubbly' },
+    { name: 'Margarita', base: 'Tequila', glass: 'Coupe', color: '#E8CF5A', blurb: 'Salt & lime' },
+    { name: 'Espresso Martini', base: 'Vodka', glass: 'Coupe', color: '#5A3A24', blurb: 'Velvety, rich' },
+    { name: 'Mojito', base: 'Rum', glass: 'Highball', color: '#7FC56A', blurb: 'Mint & lime' },
+    { name: 'Cosmopolitan', base: 'Vodka', glass: 'Coupe', color: '#F0537A', blurb: 'Tart & pink' },
   ];
 
   /** Leaderboard mock rows for the "crew" act. */

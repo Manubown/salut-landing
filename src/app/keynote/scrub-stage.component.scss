@@ -1,15 +1,17 @@
 :host { display: block; }
 
-.scrub { position: relative; }
+/* Wrapper carries the dark background too, so any pin-spacer area reads as part
+   of the stage (no black seam between sections on mobile). */
+.scrub { position: relative; background: #140d22; }
 
 /* The pinned, full-viewport stage. GSAP fixes this in place while the canvas
-   scrubs; without JS it's just a tall, styled section showing the caption. */
+   scrubs; without JS it's just a tall, styled section showing the caption.
+   Uses `vh` (large viewport) so it always covers the screen when the mobile
+   address bar hides — `svh` left a black strip. */
 .scrub__stage {
   position: relative;
   min-height: 100vh;
-  min-height: 100svh;
   overflow: hidden;
-  /* Fallback look before/without the canvas paint (no-JS, first frame). */
   background: radial-gradient(120% 70% at 50% 0%, #221645 0%, #140d22 55%, #0c0717 100%);
 }
 

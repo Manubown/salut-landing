@@ -86,23 +86,32 @@
     </div>
   </salut-scrub-stage>
 
-  <!-- ░░ ACT 2 · COCKTAILS (CSS reveal) ░░ -->
+  <!-- ░░ ACT 2 · COCKTAILS ░░ -->
   <section id="cocktails" class="act act--cocktails">
-    <div class="container act__grid">
-      <div class="act__media" aria-hidden="true">
-        <div class="ck-cluster">
-          @for (c of cocktails; track c.name; let i = $index) {
-            <span class="ck-card" [style.--i]="i" [style.background]="c.grad">{{ c.name }}</span>
-          }
-        </div>
-      </div>
-      <div class="act__copy act__reveal">
+    <div class="container">
+      <div class="act__head act__reveal">
         <span class="eyebrow">Pour something better</span>
         <h2 class="act__title">15 cocktails worth trying.</h2>
         <p class="act__lede">
-          A built-in recipe book from Negroni to Espresso Martini. Filter by spirit or by taste,
-          then follow the ingredients and steps — no tab-hopping.
+          A built-in recipe book from Negroni to Espresso Martini — filter by spirit or taste,
+          then follow the ingredients and steps. No tab-hopping.
         </p>
+      </div>
+
+      <ul class="ck-grid">
+        @for (c of cocktails; track c.name; let i = $index) {
+          <li class="ck-card" [style.--i]="i" salutClickPop>
+            <span class="ck-card__desc">{{ c.blurb }}</span>
+            <div class="ck-card__glass" [style.--liquid]="c.color">
+              <salut-drink-glass [glass]="c.glass" [color]="c.color" />
+            </div>
+            <h3 class="ck-card__name">{{ c.name }}</h3>
+            <span class="ck-card__base">{{ c.base }}</span>
+          </li>
+        }
+      </ul>
+
+      <div class="act__foot">
         <a class="btn btn--lg" [href]="appUrl" target="_blank" rel="noopener">Browse the bar →</a>
       </div>
     </div>
