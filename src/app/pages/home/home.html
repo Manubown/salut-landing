@@ -1,4 +1,4 @@
-<a class="skip-link" href="#cocktails">Skip to content</a>
+<a class="skip-link" href="#cocktails">{{ c.skip }}</a>
 
 <header class="site-header">
   <div class="container site-header__inner">
@@ -7,8 +7,16 @@
       <span class="brand__word">Salut</span>
     </a>
     <nav class="site-header__actions" aria-label="Primary">
-      <a class="site-header__link" href="#install">Home screen</a>
-      <a class="btn btn--primary site-header__cta" [href]="appUrl" target="_blank" rel="noopener">Open app</a>
+      <a class="site-header__link" href="#install">{{ c.navInstall }}</a>
+      <a
+        class="site-header__link lang-switch"
+        [routerLink]="otherPath"
+        [attr.hreflang]="otherLocale"
+        [attr.lang]="otherLocale"
+        aria-label="Change language / Sprache wechseln"
+        >{{ otherLabel }}</a
+      >
+      <a class="btn btn--primary site-header__cta" [href]="appUrl" target="_blank" rel="noopener">{{ c.navOpen }}</a>
     </nav>
   </div>
 </header>
@@ -25,21 +33,24 @@
 
     <div class="container hero__grid">
       <div class="hero__copy">
-        <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span> Live now · Free · No app store</span>
+        <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span> {{ c.heroEyebrow }}</span>
         <h1 class="hero__title">
-          Your whole night out,<br />
-          <span class="hl">one tap away.</span>
+          {{ c.heroTitleA }}<br />
+          <span class="hl">{{ c.heroTitleHl }}</span>
         </h1>
-        <p class="hero__lede">
-          Track your drinks and BAC, raid 15 cocktail recipes, climb the leaderboard and play
-          party games with your crew — live in your browser, and on your home screen.
-        </p>
+        <p class="hero__lede">{{ c.heroLede }}</p>
         <div class="hero__cta">
           <a class="btn btn--primary btn--lg" [href]="appUrl" target="_blank" rel="noopener">
-            Open Salut <span aria-hidden="true">→</span>
+            {{ c.ctaOpen }} <span aria-hidden="true">→</span>
           </a>
-          <a class="btn btn--lg" href="#bac">Take the tour</a>
+          <a class="btn btn--lg" href="#bac">{{ c.ctaTour }}</a>
         </div>
+        <ul class="hero__proof">
+          @for (p of c.proof; track p; let last = $last) {
+            <li>{{ p }}</li>
+            @if (!last) { <li aria-hidden="true">·</li> }
+          }
+        </ul>
       </div>
 
       <div class="hero__art" aria-hidden="true">
@@ -65,24 +76,15 @@
       </div>
     </div>
 
-    <span class="scroll-cue" aria-hidden="true">Scroll<i></i></span>
+    <span class="scroll-cue" aria-hidden="true">{{ c.scroll }}<i></i></span>
   </section>
 
   <!-- ░░ ACT 1 · BAC (scroll-scrub) ░░ -->
-  <salut-scrub-stage
-    id="bac"
-    motion="bar"
-    accent="#56ccf2"
-    label="Live BAC · time till sober"
-    [scrollLength]="2.4"
-  >
+  <salut-scrub-stage id="bac" motion="bar" accent="#56ccf2" [label]="c.bacLabel" [scrollLength]="2.4">
     <div class="act-caption">
-      <span class="eyebrow">Your night, measured</span>
-      <h2 class="act-caption__title">Watch your limit, live.</h2>
-      <p class="act-caption__lede">
-        Log a round and your blood-alcohol gauge rises in real time — the same Widmark math the
-        pros use — counting down to when you'll be clear again.
-      </p>
+      <span class="eyebrow">{{ c.bacEyebrow }}</span>
+      <h2 class="act-caption__title">{{ c.bacTitle }}</h2>
+      <p class="act-caption__lede">{{ c.bacLede }}</p>
     </div>
   </salut-scrub-stage>
 
@@ -90,60 +92,54 @@
   <section id="cocktails" class="act act--cocktails">
     <div class="container">
       <div class="act__head act__reveal">
-        <span class="eyebrow">Pour something better</span>
-        <h2 class="act__title">15 cocktails worth trying.</h2>
-        <p class="act__lede">
-          A built-in recipe book from Negroni to Espresso Martini — filter by spirit or taste,
-          then follow the ingredients and steps. No tab-hopping.
-        </p>
+        <span class="eyebrow">{{ c.ckEyebrow }}</span>
+        <h2 class="act__title">{{ c.ckTitle }}</h2>
+        <p class="act__lede">{{ c.ckLede }}</p>
       </div>
 
       <ul class="ck-grid">
-        @for (c of cocktails; track c.name; let i = $index) {
+        @for (ck of cocktails; track ck.name; let i = $index) {
           <li class="ck-card" [style.--i]="i" salutClickPop>
-            <span class="ck-card__desc">{{ c.blurb }}</span>
-            <div class="ck-card__glass" [style.--liquid]="c.color">
-              <salut-drink-glass [glass]="c.glass" [color]="c.color" />
+            <span class="ck-card__desc">{{ c.ckBlurbs[i] }}</span>
+            <div class="ck-card__glass" [style.--liquid]="ck.color">
+              <salut-drink-glass [glass]="ck.glass" [color]="ck.color" />
             </div>
-            <h3 class="ck-card__name">{{ c.name }}</h3>
-            <span class="ck-card__base">{{ c.base }}</span>
+            <h3 class="ck-card__name">{{ ck.name }}</h3>
+            <span class="ck-card__base">{{ ck.base }}</span>
           </li>
         }
       </ul>
 
       <div class="act__foot">
-        <a class="btn btn--lg" [href]="appUrl" target="_blank" rel="noopener">Browse the bar →</a>
+        <a class="btn btn--lg" [href]="appUrl" target="_blank" rel="noopener">{{ c.ckCta }}</a>
       </div>
     </div>
   </section>
 
-  <!-- ░░ ACT 3 · THE CREW (CSS reveal) ░░ -->
+  <!-- ░░ ACT 3 · THE CREW ░░ -->
   <section class="act act--crew">
     <div class="crew__screens parallax" aria-hidden="true">
       <span class="bs bs--a"></span>
       <span class="bs bs--b"></span>
     </div>
-    <div class="container act__grid act__grid--rev">
+    <div class="container act__grid">
       <div class="act__copy act__reveal">
-        <span class="eyebrow">Better together</span>
-        <h2 class="act__title">Settle who runs the night.</h2>
-        <p class="act__lede">
-          Every drink scores. Climb the server-ranked leaderboard, see what your crew is pouring
-          in the live feed, and add friends with a code.
-        </p>
+        <span class="eyebrow">{{ c.crewEyebrow }}</span>
+        <h2 class="act__title">{{ c.crewTitle }}</h2>
+        <p class="act__lede">{{ c.crewLede }}</p>
         <ul class="chips">
-          @for (chip of chips; track chip.label) {
-            <li class="chip"><span aria-hidden="true">{{ chip.icon }}</span> {{ chip.label }}</li>
+          @for (chip of c.chips; track chip) {
+            <li class="chip">{{ chip }}</li>
           }
         </ul>
       </div>
       <div class="act__media act__reveal" aria-hidden="true">
         <div class="lb">
-          <span class="lb__head">Leaderboard · Tonight</span>
+          <span class="lb__head">{{ c.lbHead }}</span>
           @for (r of ranks; track r.pos) {
             <div class="lb__row" [class.lb__row--you]="r.you">
               <span class="lb__pos">{{ r.pos }}</span>
-              <span class="lb__name">{{ r.name }}</span>
+              <span class="lb__name">{{ r.you ? c.lbYou : r.name }}</span>
               <span class="lb__pts">{{ r.pts }} pts</span>
             </div>
           }
@@ -152,69 +148,62 @@
     </div>
   </section>
 
-  <!-- ░░ ACT 4 · GAMES (CSS reveal + scroll-spin) ░░ -->
+  <!-- ░░ ACT 4 · GAMES ░░ -->
   <section class="act act--games">
     <div class="container act__grid">
       <div class="act__media" aria-hidden="true">
         <div class="wheel"><span class="wheel__pin"></span></div>
       </div>
       <div class="act__copy act__reveal">
-        <span class="eyebrow">When the table needs deciding</span>
-        <h2 class="act__title">Party games, built in.</h2>
-        <p class="act__lede">
-          Spin the Lucky Wheel or call out the Impostor. Pass the phone around and let Salut run
-          the round — no extra apps, no setup.
-        </p>
-        <a class="btn btn--lg" [href]="appUrl" target="_blank" rel="noopener">Play a round →</a>
+        <span class="eyebrow">{{ c.gamesEyebrow }}</span>
+        <h2 class="act__title">{{ c.gamesTitle }}</h2>
+        <p class="act__lede">{{ c.gamesLede }}</p>
+        <a class="btn btn--lg" [href]="appUrl" target="_blank" rel="noopener">{{ c.gamesCta }}</a>
       </div>
     </div>
   </section>
 
   <!-- ░░ ACT 5 · HOME SCREEN (scroll-scrub) ░░ -->
-  <salut-scrub-stage
-    id="install"
-    motion="fly"
-    accent="#ff6f5e"
-    label="Add to home screen"
-    [scrollLength]="2.6"
-  >
+  <salut-scrub-stage id="install" motion="fly" accent="#ff6f5e" [label]="c.installLabel" [scrollLength]="2.6">
     <div class="act-caption">
-      <span class="eyebrow">Make it feel native</span>
-      <h2 class="act-caption__title">Lives on your home screen.</h2>
-      <p class="act-caption__lede">
-        Salut is a progressive web app — add it once and it launches full-screen with its own
-        icon. No store, no download, always up to date.
-      </p>
+      <span class="eyebrow">{{ c.installEyebrow }}</span>
+      <h2 class="act-caption__title">{{ c.installTitle }}</h2>
+      <p class="act-caption__lede">{{ c.installLede }}</p>
       <a class="btn btn--primary btn--lg" [href]="appUrl" target="_blank" rel="noopener">
-        Open Salut <span aria-hidden="true">→</span>
+        {{ c.installCta }} <span aria-hidden="true">→</span>
       </a>
     </div>
   </salut-scrub-stage>
 
-  <!-- ░░ WHAT'S NEXT · EVENTS WAITLIST ░░ -->
-  <section class="section cta">
-    <div class="container container--narrow cta__inner act__reveal">
-      <span class="eyebrow">On the way</span>
-      <h2 class="section__title">Events are coming to Vienna.</h2>
-      <p class="cta__lede">
-        Next up: discover what's on tonight, browse by genre, see which friends are going and
-        rally a crew. Drop your email and you'll be first to know when it lands in your city.
-      </p>
-      <div id="join">
-        <salut-notify-form />
+  <!-- ░░ FAQ (structured data) ░░ -->
+  <section id="faq" class="act act--faq">
+    <div class="container container--narrow">
+      <div class="act__head act__head--center act__reveal">
+        <span class="eyebrow">{{ c.faqEyebrow }}</span>
+        <h2 class="act__title">{{ c.faqTitle }}</h2>
+      </div>
+      <div class="faq act__reveal">
+        @for (item of c.faq; track item.q) {
+          <details class="faq__item">
+            <summary class="faq__q">{{ item.q }}</summary>
+            <p class="faq__a">{{ item.a }}</p>
+          </details>
+        }
       </div>
     </div>
   </section>
+
 </main>
 
 <footer class="site-footer">
   <div class="container site-footer__inner">
     <span class="brand"><span class="brand__mark" aria-hidden="true">S</span> Salut</span>
     <nav class="site-footer__links" aria-label="Footer">
-      <a [href]="appUrl" target="_blank" rel="noopener">Open app</a>
+      <a [href]="appUrl" target="_blank" rel="noopener">{{ c.navOpen }}</a>
+      <a [routerLink]="otherPath" [attr.hreflang]="otherLocale" [attr.lang]="otherLocale">{{ otherLabel }}</a>
       <a routerLink="/impressum">Impressum</a>
       <a routerLink="/datenschutz">Datenschutz</a>
     </nav>
-    <p>© {{ year }} Salut · Please drink responsibly.</p>
+    <p>© {{ year }} Salut · {{ c.footerTagline }}</p>
   </div>
 </footer>

@@ -6,12 +6,13 @@ import {
   afterNextRender,
   inject,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { NotifyForm } from '../../components/notify-form/notify-form';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ScrubStage } from '../../keynote/scrub-stage.component';
 import { DrinkGlass, GlassType } from '../../keynote/drink-glass.component';
 import { ClickPopDirective } from '../../keynote/click-pop.directive';
 import { SeoService, SITE_URL } from '../../core/seo/seo.service';
+import { DEFAULT_LOCALE, Locale, homePath } from '../../core/i18n/locale';
+import { HOME_COPY, HomeCopy } from './home.content';
 
 interface Cocktail {
   name: string;
@@ -19,13 +20,6 @@ interface Cocktail {
   glass: GlassType;
   /** Liquid tint for the glass illustration. */
   color: string;
-  /** Short description that floats above the card. */
-  blurb: string;
-}
-
-interface Chip {
-  icon: string;
-  label: string;
 }
 
 /**
@@ -36,7 +30,7 @@ export const APP_URL = 'https://salut-web.bressler.at';
 
 @Component({
   selector: 'salut-home',
-  imports: [NotifyForm, RouterLink, ScrubStage, DrinkGlass, ClickPopDirective],
+  imports: [RouterLink, ScrubStage, DrinkGlass, ClickPopDirective],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,21 +38,36 @@ export const APP_URL = 'https://salut-web.bressler.at';
 export class Home implements OnInit {
   private readonly seo = inject(SeoService);
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly year = new Date().getFullYear();
   protected readonly appUrl = APP_URL;
 
-  /** A taste of the recipe library (real names + glasses from the app). */
-  protected readonly cocktails: Cocktail[] = [
-    { name: 'Negroni', base: 'Gin', glass: 'Rocks', color: '#E0533C', blurb: 'Italian classic' },
-    { name: 'Aperol Spritz', base: 'Aperitivo', glass: 'Wine', color: '#FF8A3D', blurb: 'Bright & bubbly' },
-    { name: 'Margarita', base: 'Tequila', glass: 'Coupe', color: '#E8CF5A', blurb: 'Salt & lime' },
-    { name: 'Espresso Martini', base: 'Vodka', glass: 'Coupe', color: '#5A3A24', blurb: 'Velvety, rich' },
-    { name: 'Mojito', base: 'Rum', glass: 'Highball', color: '#7FC56A', blurb: 'Mint & lime' },
-    { name: 'Cosmopolitan', base: 'Vodka', glass: 'Coupe', color: '#F0537A', blurb: 'Tart & pink' },
+  /** Resolved from route data (de at '/', en at '/en'). */
+  protected readonly locale: Locale =
+    (this.route.snapshot.data['locale'] as Locale) ?? DEFAULT_LOCALE;
+  protected readonly c: HomeCopy = HOME_COPY[this.locale];
+  protected readonly otherLocale: Locale = this.locale === 'de' ? 'en' : 'de';
+  protected readonly otherPath = homePath(this.otherLocale);
+  protected readonly otherLabel = this.otherLocale.toUpperCase();
+
+  /** Bidirectional hreflang set (same on both language pages). */
+  private readonly alternates = [
+    { hreflang: 'de', href: `${SITE_URL}/` },
+    { hreflang: 'en', href: `${SITE_URL}/en` },
+    { hreflang: 'x-default', href: `${SITE_URL}/en` },
   ];
 
-  /** Leaderboard mock rows for the "crew" act. */
+  /** A taste of the recipe library (names + glasses from the app). */
+  protected readonly cocktails: Cocktail[] = [
+    { name: 'Negroni', base: 'Gin', glass: 'Rocks', color: '#E0533C' },
+    { name: 'Aperol Spritz', base: 'Aperitivo', glass: 'Wine', color: '#FF8A3D' },
+    { name: 'Margarita', base: 'Tequila', glass: 'Coupe', color: '#E8CF5A' },
+    { name: 'Espresso Martini', base: 'Vodka', glass: 'Coupe', color: '#5A3A24' },
+    { name: 'Mojito', base: 'Rum', glass: 'Highball', color: '#7FC56A' },
+    { name: 'Cosmopolitan', base: 'Vodka', glass: 'Coupe', color: '#F0537A' },
+  ];
+
   protected readonly ranks = [
     { pos: 1, name: 'Mara', pts: 1340 },
     { pos: 2, name: 'Jonas', pts: 1295 },
@@ -66,17 +75,8 @@ export class Home implements OnInit {
     { pos: 4, name: 'Lena', pts: 1110 },
   ];
 
-  /** Everything else that's already in the app. */
-  protected readonly chips: Chip[] = [
-    { icon: '👥', label: 'Friends by code' },
-    { icon: '📰', label: 'Live drink feed' },
-    { icon: '📊', label: 'Session history & stats' },
-    { icon: '🎯', label: 'Impostor party game' },
-  ];
-
   constructor() {
-    // Premium pointer/gyro tilt on the hero device. Browser-only and
-    // motion-safe; falls back to a flat, perfectly fine card otherwise.
+    // Premium pointer/gyro tilt on the hero device. Browser-only, motion-safe.
     afterNextRender(() => {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const root = this.host.nativeElement as HTMLElement;
@@ -102,13 +102,14 @@ export class Home implements OnInit {
 
   ngOnInit(): void {
     this.seo.apply({
-      title: 'Salut — Track your night out. Right from your home screen.',
-      description:
-        'Salut is live in your browser: track your drinks and BAC, browse 15 cocktail recipes, climb the leaderboard, add friends and play party games. Free, and it installs straight to your home screen.',
-      path: '/',
+      title: this.c.seoTitle,
+      description: this.c.seoDescription,
+      path: homePath(this.locale),
+      locale: this.locale,
+      alternates: this.alternates,
     });
-    // Organization + WebSite + WebApplication as one @graph, cross-linked via
-    // @id. The structured-data pattern Google prefers for a brand site.
+
+    // Organization + WebSite + WebApplication graph, cross-linked via @id.
     this.seo.setJsonLd({
       '@context': 'https://schema.org',
       '@graph': [
@@ -118,18 +119,16 @@ export class Home implements OnInit {
           name: 'Salut',
           url: `${SITE_URL}/`,
           logo: `${SITE_URL}/icon-512.png`,
-          description:
-            'Salut helps you have a better night out: track your drinks and BAC, browse cocktail recipes, climb the leaderboard, add friends and play party games.',
+          description: this.c.seoDescription,
         },
         {
           '@type': 'WebSite',
           '@id': `${SITE_URL}/#website`,
           name: 'Salut',
           url: `${SITE_URL}/`,
-          inLanguage: 'en',
+          inLanguage: this.locale,
           publisher: { '@id': `${SITE_URL}/#organization` },
-          description:
-            'Track your drinks and BAC, browse cocktail recipes, climb the leaderboard and play party games — installable straight to your home screen.',
+          description: this.c.seoDescription,
         },
         {
           '@type': 'WebApplication',
@@ -144,5 +143,21 @@ export class Home implements OnInit {
         },
       ],
     });
+
+    // FAQ structured data — high-value for the long-tail "Promille" queries.
+    this.seo.setJsonLd(
+      {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        '@id': `${SITE_URL}${homePath(this.locale)}#faq`,
+        inLanguage: this.locale,
+        mainEntity: this.c.faq.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      },
+      'ld-faq',
+    );
   }
 }
