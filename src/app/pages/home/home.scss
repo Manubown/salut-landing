@@ -154,7 +154,18 @@
 }
 @keyframes hl-pan { to { background-position: 100% 50%; } }
 .hero__lede { font-size: var(--fs-500); color: var(--text-muted); max-width: 46ch; margin-bottom: var(--s-6); }
-.hero__cta { display: flex; flex-wrap: wrap; gap: var(--s-3); }
+.hero__cta { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-bottom: var(--s-5); }
+.hero__proof {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-subtle);
+  font-size: var(--fs-200);
+}
 
 .hero__art { perspective: 1200px; }
 .hero__device {
