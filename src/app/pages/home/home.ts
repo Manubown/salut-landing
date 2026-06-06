@@ -6,37 +6,31 @@ import {
   afterNextRender,
   inject,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { NotifyForm } from '../../components/notify-form/notify-form';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ScrubStage } from '../../keynote/scrub-stage.component';
+import { DrinkGlass, GlassType } from '../../keynote/drink-glass.component';
+import { ClickPopDirective } from '../../keynote/click-pop.directive';
 import { SeoService, SITE_URL } from '../../core/seo/seo.service';
+import { DEFAULT_LOCALE, Locale, homePath } from '../../core/i18n/locale';
+import { HOME_COPY, HomeCopy } from './home.content';
 
-interface Feature {
-  icon: string;
-  title: string;
-  body: string;
-}
-
-interface Step {
-  n: string;
-  title: string;
-  body: string;
-}
-
-interface Benefit {
-  icon: string;
-  text: string;
+interface Cocktail {
+  name: string;
+  base: string;
+  glass: GlassType;
+  /** Liquid tint for the glass illustration. */
+  color: string;
 }
 
 /**
- * The live web app (an installable PWA). The app itself handles the one-tap
- * install prompt; the landing just sends people there. Single place to change
- * if the app domain moves.
+ * The live web app (an installable PWA). The app owns the install prompt;
+ * the landing sends people there. Single place to change if the domain moves.
  */
 export const APP_URL = 'https://salut-web.bressler.at';
 
 @Component({
   selector: 'salut-home',
-  imports: [NotifyForm, RouterLink],
+  imports: [RouterLink, ScrubStage, DrinkGlass, ClickPopDirective],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,111 +38,78 @@ export const APP_URL = 'https://salut-web.bressler.at';
 export class Home implements OnInit {
   private readonly seo = inject(SeoService);
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly year = new Date().getFullYear();
   protected readonly appUrl = APP_URL;
 
-  /** The nightly core loop — what the app is actually for. */
-  protected readonly loop: Step[] = [
-    {
-      n: '1',
-      title: 'Log the round',
-      body: 'Tap ＋ and add what you’re drinking. A beer, a shot, that third Negroni — it all counts.',
-    },
-    {
-      n: '2',
-      title: 'Watch your limit',
-      body: 'Your blood-alcohol gauge rises and falls in real time, with a countdown to when you’ll be sober again.',
-    },
-    {
-      n: '3',
-      title: 'Climb & compare',
-      body: 'Every drink banks points. Rank up the global leaderboard and see what your crew is pouring in the feed.',
-    },
+  /** Resolved from route data (de at '/', en at '/en'). */
+  protected readonly locale: Locale =
+    (this.route.snapshot.data['locale'] as Locale) ?? DEFAULT_LOCALE;
+  protected readonly c: HomeCopy = HOME_COPY[this.locale];
+  protected readonly otherLocale: Locale = this.locale === 'de' ? 'en' : 'de';
+  protected readonly otherPath = homePath(this.otherLocale);
+  protected readonly otherLabel = this.otherLocale.toUpperCase();
+
+  /** Bidirectional hreflang set (same on both language pages). */
+  private readonly alternates = [
+    { hreflang: 'de', href: `${SITE_URL}/` },
+    { hreflang: 'en', href: `${SITE_URL}/en` },
+    { hreflang: 'x-default', href: `${SITE_URL}/en` },
   ];
 
-  /** Everything already shipped in the live app today. */
-  protected readonly features: Feature[] = [
-    {
-      icon: '📈',
-      title: 'Live BAC tracking',
-      body: 'Watch your blood-alcohol level climb and fade on a live gauge — the same Widmark math the pros use — with a time-till-sober countdown.',
-    },
-    {
-      icon: '🍸',
-      title: '15 cocktails to try',
-      body: 'A built-in recipe book from Negroni to Espresso Martini. Filter by spirit or by taste, then follow the ingredients and steps.',
-    },
-    {
-      icon: '📰',
-      title: 'A live drink feed',
-      body: 'See what your crew is pouring tonight, upvote the good ones, and add any drink to your own tracker in a single tap.',
-    },
-    {
-      icon: '🏆',
-      title: 'Points & leaderboard',
-      body: 'Every drink scores. Climb the server-ranked leaderboard and settle, once and for all, who really runs the night.',
-    },
-    {
-      icon: '👥',
-      title: 'Friends by code',
-      body: 'Share a friend code, build your crew, accept requests, and keep the whole night connected.',
-    },
-    {
-      icon: '🎲',
-      title: 'Party games built in',
-      body: 'Impostor and the Lucky Wheel ship with the app. Pass the phone around and let the table decide the rest.',
-    },
+  /** A taste of the recipe library (names + glasses from the app). */
+  protected readonly cocktails: Cocktail[] = [
+    { name: 'Negroni', base: 'Gin', glass: 'Rocks', color: '#E0533C' },
+    { name: 'Aperol Spritz', base: 'Aperitivo', glass: 'Wine', color: '#FF8A3D' },
+    { name: 'Margarita', base: 'Tequila', glass: 'Coupe', color: '#E8CF5A' },
+    { name: 'Espresso Martini', base: 'Vodka', glass: 'Coupe', color: '#5A3A24' },
+    { name: 'Mojito', base: 'Rum', glass: 'Highball', color: '#7FC56A' },
+    { name: 'Cosmopolitan', base: 'Vodka', glass: 'Coupe', color: '#F0537A' },
   ];
 
-  /** Why the home-screen install is worth it (the app offers the prompt). */
-  protected readonly benefits: Benefit[] = [
-    { icon: '⚡', text: 'Installs in seconds — no app store, no download' },
-    { icon: '🖥️', text: 'Opens full-screen with its own icon, like a native app' },
-    { icon: '🔄', text: 'Always the latest version — nothing to update' },
+  protected readonly ranks = [
+    { pos: 1, name: 'Mara', pts: 1340 },
+    { pos: 2, name: 'Jonas', pts: 1295 },
+    { pos: 3, name: 'You', pts: 1280, you: true },
+    { pos: 4, name: 'Lena', pts: 1110 },
   ];
 
   constructor() {
-    // Fluid scroll-reveal. Browser-only (afterNextRender never runs on the
-    // server), so SSR ships fully-visible markup and there's no FOUC: the
-    // hidden start-state is gated behind the `reveal-ready` class we add here.
+    // Premium pointer/gyro tilt on the hero device. Browser-only, motion-safe.
     afterNextRender(() => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const root = this.host.nativeElement as HTMLElement;
-      const items = Array.from(root.querySelectorAll<HTMLElement>('.reveal'));
-      if (!items.length) return;
+      const device = root.querySelector<HTMLElement>('.hero__device');
+      const scene = root.querySelector<HTMLElement>('.hero__art');
+      if (!device || !scene) return;
 
-      if (!('IntersectionObserver' in window)) {
-        items.forEach((el) => el.classList.add('in'));
-        return;
-      }
-
-      root.classList.add('reveal-ready');
-      const io = new IntersectionObserver(
-        (entries) => {
-          for (const entry of entries) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('in');
-              io.unobserve(entry.target);
-            }
-          }
-        },
-        { rootMargin: '0px 0px -10% 0px', threshold: 0.1 },
-      );
-      items.forEach((el) => io.observe(el));
+      const onMove = (e: PointerEvent) => {
+        const r = scene.getBoundingClientRect();
+        const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+        const dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+        device.style.setProperty('--rx', `${(-dy * 6).toFixed(2)}deg`);
+        device.style.setProperty('--ry', `${(dx * 8).toFixed(2)}deg`);
+      };
+      const reset = () => {
+        device.style.setProperty('--rx', '0deg');
+        device.style.setProperty('--ry', '0deg');
+      };
+      scene.addEventListener('pointermove', onMove);
+      scene.addEventListener('pointerleave', reset);
     });
   }
 
   ngOnInit(): void {
     this.seo.apply({
-      title: 'Salut — Track your night out. Right from your home screen.',
-      description:
-        'Salut is live in your browser: track your drinks and BAC, browse 15 cocktail recipes, climb the leaderboard, add friends and play party games. Free, and it installs straight to your home screen.',
-      path: '/',
+      title: this.c.seoTitle,
+      description: this.c.seoDescription,
+      path: homePath(this.locale),
+      locale: this.locale,
+      alternates: this.alternates,
     });
-    // Organization + WebSite as one @graph, cross-linked via @id (publisher).
-    // This is the structured-data pattern Google prefers for a brand site and
-    // is what surfaces the knowledge-panel / logo. inLanguage tracks the
-    // current content language (English today; per-locale once i18n lands).
+
+    // Organization + WebSite + WebApplication graph, cross-linked via @id.
     this.seo.setJsonLd({
       '@context': 'https://schema.org',
       '@graph': [
@@ -158,21 +119,18 @@ export class Home implements OnInit {
           name: 'Salut',
           url: `${SITE_URL}/`,
           logo: `${SITE_URL}/icon-512.png`,
-          description:
-            'Salut helps you have a better night out: track your drinks and BAC, browse cocktail recipes, climb the leaderboard, add friends and play party games.',
+          description: this.c.seoDescription,
         },
         {
           '@type': 'WebSite',
           '@id': `${SITE_URL}/#website`,
           name: 'Salut',
           url: `${SITE_URL}/`,
-          inLanguage: 'en',
+          inLanguage: this.locale,
           publisher: { '@id': `${SITE_URL}/#organization` },
-          description:
-            'Track your drinks and BAC, browse cocktail recipes, climb the leaderboard and play party games — installable straight to your home screen.',
+          description: this.c.seoDescription,
         },
         {
-          // The product itself — a free, installable web application.
           '@type': 'WebApplication',
           '@id': `${SITE_URL}/#webapp`,
           name: 'Salut',
@@ -185,5 +143,21 @@ export class Home implements OnInit {
         },
       ],
     });
+
+    // FAQ structured data — high-value for the long-tail "Promille" queries.
+    this.seo.setJsonLd(
+      {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        '@id': `${SITE_URL}${homePath(this.locale)}#faq`,
+        inLanguage: this.locale,
+        mainEntity: this.c.faq.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      },
+      'ld-faq',
+    );
   }
 }

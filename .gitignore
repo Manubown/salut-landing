@@ -47,3 +47,11 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Keynote media: source recordings stay local (large); frame sequences are
+# regenerated with `npm run frames` (see docs/KEYNOTE.md). Commit the final
+# frames (or build them in CI) at ship time.
+/public/recordings/*
+!/public/recordings/.gitkeep
+/public/seq/*
+!/public/seq/.gitkeep

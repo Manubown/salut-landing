@@ -31,9 +31,8 @@
               }
             ],
             "styles": [
-              "node_modules/@fontsource/space-grotesk/500.css",
-              "node_modules/@fontsource/space-grotesk/600.css",
-              "node_modules/@fontsource/space-grotesk/700.css",
+              "node_modules/@fontsource/space-grotesk/latin-600.css",
+              "node_modules/@fontsource/space-grotesk/latin-700.css",
               "src/styles.scss"
             ],
             "server": "src/main.server.ts",
@@ -55,8 +54,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "12kB",
-                  "maximumError": "16kB"
+                  "maximumWarning": "18kB",
+                  "maximumError": "24kB"
                 }
               ],
               "outputHashing": "all"

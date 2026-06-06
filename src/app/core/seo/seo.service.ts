@@ -1,5 +1,11 @@
 import { DOCUMENT, Injectable, inject } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
+import { HTML_LANG, Locale, OG_LOCALE } from '../i18n/locale';
+
+export interface HreflangAlternate {
+  hreflang: string;
+  href: string;
+}
 
 export interface SeoData {
   title: string;
@@ -9,19 +15,24 @@ export interface SeoData {
   image?: string;
   type?: string;
   robots?: string;
+  /** Content language of the page (sets <html lang>, og:locale, hreflang). */
+  locale?: Locale;
+  /** hreflang alternates, including x-default. */
+  alternates?: HreflangAlternate[];
 }
 
 /**
- * The canonical public origin. Test/staging today; flips to the production
- * domain at launch — this is the single place to change it.
- *   - now:    https://salut.bown.at   (Coolify staging)
- *   - launch: https://salut.com
+ * The canonical public origin. Override at build via SITE_URL env if it ever
+ * moves (e.g. to salut.at) — this is the single source of truth.
+ *   - now:    https://salut.bown.at
  */
-export const SITE_URL = 'https://salut.bown.at';
+export const SITE_URL = (
+  (typeof process !== 'undefined' && process.env?.['SITE_URL']) || 'https://salut.bown.at'
+).replace(/\/$/, '');
 
 /**
- * Centralises page-level SEO: <title>, meta description, Open Graph /
- * Twitter tags, the canonical link and JSON-LD structured data. Runs on
+ * Centralises page-level SEO: <title>, meta description, Open Graph / Twitter
+ * tags, canonical, hreflang alternates, the page language and JSON-LD. Runs on
  * the server during SSR/prerender so crawlers see fully-rendered tags.
  */
 @Injectable({ providedIn: 'root' })
@@ -46,7 +57,15 @@ export class SeoService {
     this.meta.updateTag({ property: 'og:type', content: type });
     this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
 
+    if (data.locale) {
+      const other: Locale = data.locale === 'de' ? 'en' : 'de';
+      this.doc.documentElement.lang = HTML_LANG[data.locale];
+      this.meta.updateTag({ property: 'og:locale', content: OG_LOCALE[data.locale] });
+      this.meta.updateTag({ property: 'og:locale:alternate', content: OG_LOCALE[other] });
+    }
+
     this.setCanonical(url);
+    this.setHreflang(data.alternates ?? []);
   }
 
   setJsonLd(schema: Record<string, unknown>, id = 'ld-default'): void {
@@ -68,5 +87,19 @@ export class SeoService {
       this.doc.head.appendChild(link);
     }
     link.setAttribute('href', url);
+  }
+
+  private setHreflang(alternates: HreflangAlternate[]): void {
+    // Clear any from a previous navigation, then re-emit.
+    Array.from(
+      this.doc.querySelectorAll('link[rel="alternate"][hreflang]'),
+    ).forEach((el) => el.remove());
+    for (const alt of alternates) {
+      const link = this.doc.createElement('link');
+      link.setAttribute('rel', 'alternate');
+      link.setAttribute('hreflang', alt.hreflang);
+      link.setAttribute('href', alt.href);
+      this.doc.head.appendChild(link);
+    }
   }
 }
