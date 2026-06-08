@@ -17,6 +17,12 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 const waitlistApiUrl = (
   process.env['WAITLIST_API_URL'] || 'https://api.salut.bown.at'
 ).replace(/\/$/, '');
+// The Salut app backend (Go). Early-access pre-registration is proxied here
+// server-to-server so the browser only ever talks to this same origin (DSGVO:
+// no cross-origin request fired from the page). Override with SALUT_API_URL.
+const salutApiUrl = (
+  process.env['SALUT_API_URL'] || 'https://salut-api.bressler.at'
+).replace(/\/$/, '');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UPSTREAM_TIMEOUT_MS = 8000;
 
@@ -69,11 +75,12 @@ app.use(express.json({ limit: '8kb' }));
 async function callApi(
   path: string,
   init: RequestInit,
+  base: string = waitlistApiUrl,
 ): Promise<{ status: number; body: unknown }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
   try {
-    const resp = await fetch(`${waitlistApiUrl}${path}`, {
+    const resp = await fetch(`${base}${path}`, {
       ...init,
       signal: controller.signal,
     });
@@ -130,6 +137,47 @@ app.get('/api/subscribe/count', async (_req, res) => {
     res.json({ ok: true, count });
   } catch {
     res.json({ ok: true, count: 0 });
+  }
+});
+
+/**
+ * Early-access pre-registration. Validates input, then proxies server-to-server
+ * to the Salut backend (POST /public/api/preregister).
+ */
+app.post('/api/preregister', async (req, res) => {
+  const name = String(req.body?.name ?? '').trim();
+  const username = String(req.body?.username ?? '').trim();
+  const email = String(req.body?.email ?? '').trim().toLowerCase();
+  const age = Number(req.body?.age);
+
+  if (!name || !username || !EMAIL_RE.test(email) || email.length > 254) {
+    res.status(400).json({ ok: false, error: 'invalid' });
+    return;
+  }
+  if (!Number.isFinite(age) || age < 18 || age > 120) {
+    res.status(400).json({ ok: false, error: 'age' });
+    return;
+  }
+
+  try {
+    const { status, body } = await callApi(
+      '/public/api/preregister',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: name.slice(0, 80),
+          username: username.slice(0, 40),
+          email,
+          age,
+          source: 'landing',
+        }),
+      },
+      salutApiUrl,
+    );
+    res.status(status).json(body ?? { ok: false, error: 'bad_upstream' });
+  } catch {
+    res.status(502).json({ ok: false, error: 'upstream_unreachable' });
   }
 });
 

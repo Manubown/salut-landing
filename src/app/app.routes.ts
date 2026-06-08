@@ -26,6 +26,18 @@ export const routes: Routes = [
     title: 'Datenschutzerklärung — Salut',
   },
   {
+    path: 'early-access',
+    data: { locale: 'de' },
+    loadComponent: () => import('./pages/register/register').then((m) => m.Register),
+    title: 'Early Access — Salut',
+  },
+  {
+    path: 'en/early-access',
+    data: { locale: 'en' },
+    loadComponent: () => import('./pages/register/register').then((m) => m.Register),
+    title: 'Early access — Salut',
+  },
+  {
     path: '**',
     loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFound),
     title: 'Page not found — Salut',
