@@ -19,4 +19,22 @@
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
+  <url>
+    <loc>https://salut.bown.at/early-access</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://salut.bown.at/early-access"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://salut.bown.at/en/early-access"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://salut.bown.at/en/early-access"/>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://salut.bown.at/en/early-access</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://salut.bown.at/early-access"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://salut.bown.at/en/early-access"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://salut.bown.at/en/early-access"/>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>
