@@ -1,0 +1,337 @@
+{
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\.devcontainer\\devcontainer.json": {
+    "mtime": 1780000809.2091856,
+    "ast_hash": "87d862735dfa72b263216d639fc13105",
+    "semantic_hash": "87d862735dfa72b263216d639fc13105"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\.vscode\\extensions.json": {
+    "mtime": 1779999084.48233,
+    "ast_hash": "66fd9e60d4633b6099fe02e06a7075ea",
+    "semantic_hash": "66fd9e60d4633b6099fe02e06a7075ea"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\.vscode\\launch.json": {
+    "mtime": 1779999084.48233,
+    "ast_hash": "430386a2f03e9d559664c196344c121b",
+    "semantic_hash": "430386a2f03e9d559664c196344c121b"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\.vscode\\mcp.json": {
+    "mtime": 1779999084.4843314,
+    "ast_hash": "a73020575e74990ecd722ccc5122bb0c",
+    "semantic_hash": "a73020575e74990ecd722ccc5122bb0c"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\.vscode\\tasks.json": {
+    "mtime": 1779999084.48533,
+    "ast_hash": "cb7ed9a56930402d9059ea5a9773d60e",
+    "semantic_hash": "cb7ed9a56930402d9059ea5a9773d60e"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\angular.json": {
+    "mtime": 1780996576.5906715,
+    "ast_hash": "61854515f66fe1a4fdff9638192defe1",
+    "semantic_hash": "61854515f66fe1a4fdff9638192defe1"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\package.json": {
+    "mtime": 1780996576.5956717,
+    "ast_hash": "2044013cb71b7eb135df7a1ef60a4f31",
+    "semantic_hash": "2044013cb71b7eb135df7a1ef60a4f31"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\scripts\\extract-frames.mjs": {
+    "mtime": 1780996576.6031911,
+    "ast_hash": "65dc6ebd47573270efd55d0070538edc",
+    "semantic_hash": "65dc6ebd47573270efd55d0070538edc"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\scripts\\gen-og.mjs": {
+    "mtime": 1780996576.6041932,
+    "ast_hash": "9aa767bd0922e3d933d2fcc6616afce0",
+    "semantic_hash": "9aa767bd0922e3d933d2fcc6616afce0"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\app.config.server.ts": {
+    "mtime": 1779999084.4933305,
+    "ast_hash": "f7b5c12b0dacd6692ee6042eb44f788b",
+    "semantic_hash": "f7b5c12b0dacd6692ee6042eb44f788b"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\app.config.ts": {
+    "mtime": 1779999881.099683,
+    "ast_hash": "022979fa507d14f656c28da49f1d888c",
+    "semantic_hash": "022979fa507d14f656c28da49f1d888c"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\app.routes.server.ts": {
+    "mtime": 1780996576.6847806,
+    "ast_hash": "f4e5d30fb133d320570484dab313165f",
+    "semantic_hash": "f4e5d30fb133d320570484dab313165f"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\app.routes.ts": {
+    "mtime": 1780996576.685788,
+    "ast_hash": "f6043d0c832486257350d1a1f680153a",
+    "semantic_hash": "f6043d0c832486257350d1a1f680153a"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\app.spec.ts": {
+    "mtime": 1779999084.4893298,
+    "ast_hash": "0c2f3ad25e2f6244a52c542d087eb598",
+    "semantic_hash": "0c2f3ad25e2f6244a52c542d087eb598"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\app.ts": {
+    "mtime": 1780079605.2585497,
+    "ast_hash": "20d943bc7a6696b17ec7a238ff166fc5",
+    "semantic_hash": "20d943bc7a6696b17ec7a238ff166fc5"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\components\\notify-form\\notify-form.ts": {
+    "mtime": 1780079620.8531704,
+    "ast_hash": "3f625688ed5b5dd73418bd4edfab3ada",
+    "semantic_hash": "3f625688ed5b5dd73418bd4edfab3ada"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\analytics\\analytics.config.ts": {
+    "mtime": 1780087269.6311185,
+    "ast_hash": "b7dda5b6589ab67304469576779cae9a",
+    "semantic_hash": "b7dda5b6589ab67304469576779cae9a"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\analytics\\analytics.service.ts": {
+    "mtime": 1780079590.6057258,
+    "ast_hash": "13765a1c75b5a33023146db1e91008bf",
+    "semantic_hash": "13765a1c75b5a33023146db1e91008bf"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\api\\preregister.service.ts": {
+    "mtime": 1780996576.6071918,
+    "ast_hash": "9dce4ce3b18c5ad22c69df3b54732456",
+    "semantic_hash": "9dce4ce3b18c5ad22c69df3b54732456"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\api\\subscribe.service.ts": {
+    "mtime": 1780003455.4394622,
+    "ast_hash": "06c55b39d8af8e6d45caa384d71eec25",
+    "semantic_hash": "06c55b39d8af8e6d45caa384d71eec25"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\app-links.ts": {
+    "mtime": 1780996576.6867878,
+    "ast_hash": "7f8b3c0adae53022785baecfa4c3be64",
+    "semantic_hash": "7f8b3c0adae53022785baecfa4c3be64"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\events\\event.model.ts": {
+    "mtime": 1780996576.6877882,
+    "ast_hash": "87d841876d445e863ef4855533ba8a21",
+    "semantic_hash": "87d841876d445e863ef4855533ba8a21"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\events\\events.config.ts": {
+    "mtime": 1780996576.6887877,
+    "ast_hash": "7986f0737be902b0f1bb907459fd560c",
+    "semantic_hash": "7986f0737be902b0f1bb907459fd560c"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\events\\events.resolver.ts": {
+    "mtime": 1780996576.6897874,
+    "ast_hash": "0223616d6d745c4a1d8905f80df267ea",
+    "semantic_hash": "0223616d6d745c4a1d8905f80df267ea"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\events\\events.service.ts": {
+    "mtime": 1780996576.6911917,
+    "ast_hash": "6768d3b961c5b2c9b60f3c4000f76200",
+    "semantic_hash": "6768d3b961c5b2c9b60f3c4000f76200"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\events\\events.taxonomy.ts": {
+    "mtime": 1780996576.6911917,
+    "ast_hash": "cbc190b67f605e9f96488c6cdc4e845b",
+    "semantic_hash": "cbc190b67f605e9f96488c6cdc4e845b"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\i18n\\locale.ts": {
+    "mtime": 1780996576.608191,
+    "ast_hash": "404d1fc38e3509a45538100ac765e026",
+    "semantic_hash": "404d1fc38e3509a45538100ac765e026"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\core\\seo\\seo.service.ts": {
+    "mtime": 1780996576.6091857,
+    "ast_hash": "1a8b0c1f05cad11b1e1efd05f4cb41b8",
+    "semantic_hash": "1a8b0c1f05cad11b1e1efd05f4cb41b8"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\keynote\\click-pop.directive.ts": {
+    "mtime": 1780996576.6106977,
+    "ast_hash": "2a708e657c84e65036a3dcd2bf119c59",
+    "semantic_hash": "2a708e657c84e65036a3dcd2bf119c59"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\keynote\\drink-glass.component.ts": {
+    "mtime": 1780996576.6117125,
+    "ast_hash": "6cbe6ec4a93e281f52bcffef41ab3692",
+    "semantic_hash": "6cbe6ec4a93e281f52bcffef41ab3692"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\keynote\\scrub-stage.component.ts": {
+    "mtime": 1780996576.6137064,
+    "ast_hash": "ec72aba1d36a54895d22750667322613",
+    "semantic_hash": "ec72aba1d36a54895d22750667322613"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\event-detail\\event-detail.ts": {
+    "mtime": 1780996576.6962042,
+    "ast_hash": "029a03610b09eb0d386d02c5d94efcba",
+    "semantic_hash": "029a03610b09eb0d386d02c5d94efcba"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\events\\events.ts": {
+    "mtime": 1780996576.700205,
+    "ast_hash": "d73c2182502b88dc074c683fa017823b",
+    "semantic_hash": "d73c2182502b88dc074c683fa017823b"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\home\\home.content.ts": {
+    "mtime": 1781003396.384292,
+    "ast_hash": "7ddcfd57e1ad2a5b131fbd61262debe4",
+    "semantic_hash": "7ddcfd57e1ad2a5b131fbd61262debe4"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\home\\home.ts": {
+    "mtime": 1781003430.1066637,
+    "ast_hash": "9087236ac04f865ffbd352203c39770a",
+    "semantic_hash": "9087236ac04f865ffbd352203c39770a"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\legal\\datenschutz.ts": {
+    "mtime": 1780079675.624296,
+    "ast_hash": "4ed4b950222a84c641f293f94dc60114",
+    "semantic_hash": "4ed4b950222a84c641f293f94dc60114"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\legal\\impressum.ts": {
+    "mtime": 1780001123.0861197,
+    "ast_hash": "c7b5429ba9d66af95d6f4212d04027e6",
+    "semantic_hash": "c7b5429ba9d66af95d6f4212d04027e6"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\not-found\\not-found.ts": {
+    "mtime": 1780078643.8814294,
+    "ast_hash": "f732b501ac2a680cd0173ebd94ee6ca8",
+    "semantic_hash": "f732b501ac2a680cd0173ebd94ee6ca8"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\register\\register.ts": {
+    "mtime": 1780996576.6227417,
+    "ast_hash": "bf004201e5a39b63e8f5043120bdb477",
+    "semantic_hash": "bf004201e5a39b63e8f5043120bdb477"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\main.server.ts": {
+    "mtime": 1779999084.4883304,
+    "ast_hash": "9ecb37b66d871903d853e186f8b37698",
+    "semantic_hash": "9ecb37b66d871903d853e186f8b37698"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\main.ts": {
+    "mtime": 1779999084.48533,
+    "ast_hash": "1289536d6d8f94242a4ffc598d094633",
+    "semantic_hash": "1289536d6d8f94242a4ffc598d094633"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\server.ts": {
+    "mtime": 1780996576.7025783,
+    "ast_hash": "8ddcd9727bbeaa5f670c1efb5ba05e44",
+    "semantic_hash": "8ddcd9727bbeaa5f670c1efb5ba05e44"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\tsconfig.app.json": {
+    "mtime": 1779999084.4803302,
+    "ast_hash": "866b5976b8ccf7ba16fd861f343851a8",
+    "semantic_hash": "866b5976b8ccf7ba16fd861f343851a8"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\tsconfig.json": {
+    "mtime": 1779999084.4778125,
+    "ast_hash": "46e70ba7bf6d021351390882a69f0ba9",
+    "semantic_hash": "46e70ba7bf6d021351390882a69f0ba9"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\tsconfig.spec.json": {
+    "mtime": 1779999084.4813309,
+    "ast_hash": "bd7d8d4dcf7261c37c6a35a892af2f35",
+    "semantic_hash": "bd7d8d4dcf7261c37c6a35a892af2f35"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\README.md": {
+    "mtime": 1780005304.0514693,
+    "ast_hash": "207416d3506e9544e3e1b6cf2795915b",
+    "semantic_hash": "207416d3506e9544e3e1b6cf2795915b"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\continue.md": {
+    "mtime": 1780004346.7349594,
+    "ast_hash": "ffa11ef72ef1c886710c728a129786ee",
+    "semantic_hash": "ffa11ef72ef1c886710c728a129786ee"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\docker-compose.yml": {
+    "mtime": 1780005234.1911447,
+    "ast_hash": "6b973260f2c869ea5c28022e03226dc2",
+    "semantic_hash": "6b973260f2c869ea5c28022e03226dc2"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\docs\\KEYNOTE.md": {
+    "mtime": 1780996576.5916717,
+    "ast_hash": "6932df7325acb9187b8135101f56bd43",
+    "semantic_hash": "6932df7325acb9187b8135101f56bd43"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\guide.md": {
+    "mtime": 1780001672.0251095,
+    "ast_hash": "473a762fbf2c6f51d50af473576d0e6d",
+    "semantic_hash": "473a762fbf2c6f51d50af473576d0e6d"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\instructions.md": {
+    "mtime": 1780005278.8296125,
+    "ast_hash": "30647282e5ec7a9d111bedecd82cdc64",
+    "semantic_hash": "30647282e5ec7a9d111bedecd82cdc64"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\plan.md": {
+    "mtime": 1780005288.083231,
+    "ast_hash": "32c22b911ac3b917dc92fe7499cbdcfc",
+    "semantic_hash": "32c22b911ac3b917dc92fe7499cbdcfc"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\public\\robots.txt": {
+    "mtime": 1780001156.4203048,
+    "ast_hash": "7adf21d86f8dc3397710363199f55ca1",
+    "semantic_hash": "7adf21d86f8dc3397710363199f55ca1"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\scope.md": {
+    "mtime": 1780004308.1911495,
+    "ast_hash": "ef7dc55e0464ca9c20ffbd754f485358",
+    "semantic_hash": "ef7dc55e0464ca9c20ffbd754f485358"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\app.html": {
+    "mtime": 1779999418.4710453,
+    "ast_hash": "a9c9620b38514637b05faf84f49c1b42",
+    "semantic_hash": "a9c9620b38514637b05faf84f49c1b42"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\components\\notify-form\\notify-form.html": {
+    "mtime": 1780681025.5621035,
+    "ast_hash": "85172e18245621afff66ee2ecd57fdcf",
+    "semantic_hash": "85172e18245621afff66ee2ecd57fdcf"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\event-detail\\event-detail.html": {
+    "mtime": 1780996576.6932049,
+    "ast_hash": "b852a4d47c726c1944c1d2b8c692dc9b",
+    "semantic_hash": "b852a4d47c726c1944c1d2b8c692dc9b"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\events\\events.html": {
+    "mtime": 1780996576.6972084,
+    "ast_hash": "0be276f170e02eb9032b54e8a0a87fd2",
+    "semantic_hash": "0be276f170e02eb9032b54e8a0a87fd2"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\home\\home.html": {
+    "mtime": 1781003459.06227,
+    "ast_hash": "6d1a35b45d6e6f83c6f7b26d973e681b",
+    "semantic_hash": "6d1a35b45d6e6f83c6f7b26d973e681b"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\legal\\datenschutz.html": {
+    "mtime": 1780996576.6202219,
+    "ast_hash": "6147f2ae960678f245d2f22d28711046",
+    "semantic_hash": "6147f2ae960678f245d2f22d28711046"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\app\\pages\\legal\\impressum.html": {
+    "mtime": 1780996576.6207285,
+    "ast_hash": "dc4d1b0b946b7156f96b796c1b221ce1",
+    "semantic_hash": "dc4d1b0b946b7156f96b796c1b221ce1"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\src\\index.html": {
+    "mtime": 1780996576.6237419,
+    "ast_hash": "0dfbfb310cc51176b4cd6603997f4f16",
+    "semantic_hash": "0dfbfb310cc51176b4cd6603997f4f16"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\todo.md": {
+    "mtime": 1780079796.02046,
+    "ast_hash": "3c9347ea25b939f47db68d4ccaaf892d",
+    "semantic_hash": "3c9347ea25b939f47db68d4ccaaf892d"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\public\\app-icon.png": {
+    "mtime": 1780680762.417272,
+    "ast_hash": "2e43c883ac3c334d7f9d251844eea491",
+    "semantic_hash": "2e43c883ac3c334d7f9d251844eea491"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\public\\icon-512.png": {
+    "mtime": 1780680762.3381917,
+    "ast_hash": "4538d4098c4de79349905d59efe196c7",
+    "semantic_hash": "4538d4098c4de79349905d59efe196c7"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\public\\og-image.png": {
+    "mtime": 1780996576.5976698,
+    "ast_hash": "8645fe80526ecdacc5612b8fe137ed98",
+    "semantic_hash": "8645fe80526ecdacc5612b8fe137ed98"
+  },
+  "C:\\Users\\Manubown\\Programmieren\\Server\\salut-landing\\public\\og-image.svg": {
+    "mtime": 1780996576.5986705,
+    "ast_hash": "a74b6ba94ac38ba28318b953e5c5ff02",
+    "semantic_hash": "a74b6ba94ac38ba28318b953e5c5ff02"
+  }
+}
