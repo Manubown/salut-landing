@@ -7,6 +7,7 @@
       <span class="brand__word">Salut</span>
     </a>
     <nav class="site-header__actions" aria-label="Primary">
+      <a class="site-header__link" href="#events">{{ c.navEvents }}</a>
       <a class="site-header__link" href="#install">{{ c.navInstall }}</a>
       <a
         class="site-header__link lang-switch"
@@ -116,6 +117,25 @@
     </div>
   </section>
 
+  <!-- ░░ ACT · EVENTS (funnel → /events) ░░ -->
+  <section id="events" class="act act--events">
+    <div class="container">
+      <div class="act__head act__head--center act__reveal">
+        <span class="eyebrow">{{ c.evEyebrow }}</span>
+        <h2 class="act__title">{{ c.evTitle }}</h2>
+        <p class="act__lede">{{ c.evLede }}</p>
+      </div>
+      <ul class="ev-cats act__reveal">
+        @for (cat of eventCats; track cat.id) {
+          <li class="ev-cat" [style.--g1]="cat.gradient[0]" [style.--g2]="cat.gradient[1]">{{ cat.label }}</li>
+        }
+      </ul>
+      <div class="act__foot">
+        <a class="btn btn--primary btn--lg" routerLink="/events">{{ c.evCta }} <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+
   <!-- ░░ ACT 3 · THE CREW ░░ -->
   <section class="act act--crew">
     <div class="crew__screens parallax" aria-hidden="true">
@@ -199,6 +219,7 @@
   <div class="container site-footer__inner">
     <span class="brand"><span class="brand__mark" aria-hidden="true">S</span> Salut</span>
     <nav class="site-footer__links" aria-label="Footer">
+      <a routerLink="/events">{{ c.navEvents }}</a>
       <a [href]="appUrl" target="_blank" rel="noopener">{{ c.navOpen }}</a>
       <a [routerLink]="otherPath" [attr.hreflang]="otherLocale" [attr.lang]="otherLocale">{{ otherLabel }}</a>
       <a routerLink="/impressum">Impressum</a>

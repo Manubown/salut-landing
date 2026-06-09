@@ -9,6 +9,7 @@ export interface FaqItem {
 export interface HomeCopy {
   skip: string;
   navInstall: string;
+  navEvents: string;
   navOpen: string;
 
   heroEyebrow: string;
@@ -44,6 +45,11 @@ export interface HomeCopy {
   gamesLede: string;
   gamesCta: string;
 
+  evEyebrow: string;
+  evTitle: string;
+  evLede: string;
+  evCta: string;
+
   installEyebrow: string;
   installTitle: string;
   installLede: string;
@@ -63,6 +69,7 @@ export interface HomeCopy {
 const EN: HomeCopy = {
   skip: 'Skip to content',
   navInstall: 'Home screen',
+  navEvents: 'Events',
   navOpen: 'Open app',
 
   heroEyebrow: 'Live now · Free · No app store',
@@ -101,6 +108,12 @@ const EN: HomeCopy = {
   gamesLede:
     'Spin the Lucky Wheel or call out the Impostor. Pass the phone around and let Salut run the round — no extra apps.',
   gamesCta: 'Play a round →',
+
+  evEyebrow: 'Out tonight',
+  evTitle: "Find Vienna's best events.",
+  evLede:
+    'Curated club nights, concerts and bar takeovers across Vienna — browse the lineup by genre, then RSVP and rally your crew, all in the app.',
+  evCta: 'Browse events',
 
   installEyebrow: 'Make it feel native',
   installTitle: 'Lives on your home screen.',
@@ -148,6 +161,7 @@ const EN: HomeCopy = {
 const DE: HomeCopy = {
   skip: 'Zum Inhalt springen',
   navInstall: 'Homescreen',
+  navEvents: 'Events',
   navOpen: 'App öffnen',
 
   heroEyebrow: 'Jetzt live · Gratis · Ohne App-Store',
@@ -193,6 +207,12 @@ const DE: HomeCopy = {
   gamesLede:
     'Dreh das Glücksrad oder enttarne den Impostor. Reich das Handy herum und lass Salut die Runde leiten — ohne extra App.',
   gamesCta: 'Runde spielen →',
+
+  evEyebrow: 'Heute Abend los',
+  evTitle: 'Finde Wiens beste Events.',
+  evLede:
+    'Kuratierte Club-Nights, Konzerte und Bar-Events in ganz Wien — entdecke das Line-up nach Genre, sag zu und trommle deine Crew zusammen, alles in der App.',
+  evCta: 'Events entdecken',
 
   installEyebrow: 'Fühlt sich nativ an',
   installTitle: 'Direkt auf deinem Homescreen.',

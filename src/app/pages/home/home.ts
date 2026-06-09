@@ -14,6 +14,7 @@ import { SeoService, SITE_URL } from '../../core/seo/seo.service';
 import { DEFAULT_LOCALE, Locale, homePath } from '../../core/i18n/locale';
 import { HOME_COPY, HomeCopy } from './home.content';
 import { APP_URL } from '../../core/app-links';
+import { EVENT_CATEGORIES } from '../../core/events/events.taxonomy';
 
 interface Cocktail {
   name: string;
@@ -37,6 +38,9 @@ export class Home implements OnInit {
 
   protected readonly year = new Date().getFullYear();
   protected readonly appUrl = APP_URL;
+
+  /** Genre families for the Events teaser → /events (themed pills). */
+  protected readonly eventCats = EVENT_CATEGORIES;
 
   /** Resolved from route data (de at '/', en at '/en'). */
   protected readonly locale: Locale =

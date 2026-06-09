@@ -375,6 +375,31 @@
   50% { transform: translateX(-50%) translateY(-5px); }
 }
 
+/* Act · events teaser → /events */
+.act--events { text-align: center; }
+.ev-cats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-3);
+  max-width: 680px;
+  margin: var(--s-6) auto 0;
+  padding: 0;
+  list-style: none;
+}
+.ev-cat {
+  --g1: var(--c-grape);
+  --g2: var(--c-night);
+  padding: 10px 20px;
+  font-weight: 700;
+  font-size: var(--fs-200);
+  color: #fff;
+  background: linear-gradient(135deg, var(--g1), var(--g2));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-1);
+}
+
 /* Act 3 — the crew */
 .act--crew { isolation: isolate; }
 .crew__screens { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
