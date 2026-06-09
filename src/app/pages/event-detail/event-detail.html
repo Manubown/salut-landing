@@ -1,0 +1,116 @@
+<header class="topbar">
+  <a routerLink="/events" class="back" aria-label="Back to events">← Events</a>
+  <a [href]="appUrl" class="btn btn-sm" target="_blank" rel="noopener">Get the app</a>
+</header>
+
+@if (event; as e) {
+  <article>
+    <section class="hero" [style.background]="heroBg">
+      @if (cover) {
+        <img class="hero-img" [src]="cover" [alt]="e.name" fetchpriority="high" decoding="async" />
+      }
+      <div class="hero-scrim"></div>
+      <div class="hero-body">
+        <p class="eyebrow">{{ dateLine }}@if (e.city) { · {{ e.city }} }</p>
+        <h1>{{ e.name }}</h1>
+        @if (e.club_name) { <p class="venue">{{ e.club_name }}</p> }
+        @if (e.genres && e.genres.length) {
+          <div class="tags">
+            @for (gid of e.genres; track gid) {
+              <span class="tag" [style.--tag]="genreColor(gid)">{{ genreLabel(gid) }}</span>
+            }
+          </div>
+        }
+        @if (e.going_count > 0 || e.interested_count > 0) {
+          <p class="counts">
+            @if (e.going_count > 0) { <span>🔥 {{ e.going_count }} going</span> }
+            @if (e.interested_count > 0) { <span>✦ {{ e.interested_count }} interested</span> }
+          </p>
+        }
+      </div>
+    </section>
+
+    <div class="wrap">
+      <div class="actions">
+        <a class="btn btn-primary" [href]="deepLink" target="_blank" rel="noopener">RSVP in the app</a>
+        @if (e.ticket_url) {
+          <a class="btn btn-ghost" [href]="e.ticket_url" target="_blank" rel="noopener">Tickets ↗</a>
+        }
+        @if (mapUrl) {
+          <a class="btn btn-ghost" [href]="mapUrl" target="_blank" rel="noopener">Open map ↗</a>
+        }
+      </div>
+
+      <dl class="facts">
+        <div class="fact">
+          <dt>When</dt>
+          <dd>{{ dateLine }}@if (endLine) { <span class="muted"> — {{ endLine }}</span> }</dd>
+        </div>
+        @if (e.club_name || e.club_address) {
+          <div class="fact">
+            <dt>Where</dt>
+            <dd>
+              {{ e.club_name }}@if (e.club_address) { <br /><span class="muted">{{ e.club_address }}</span> }
+            </dd>
+          </div>
+        }
+        @if (e.price) {
+          <div class="fact"><dt>Price</dt><dd>{{ e.price }}</dd></div>
+        }
+        @if (e.lineup && e.lineup.length) {
+          <div class="fact">
+            <dt>Lineup</dt>
+            <dd>
+              <ul class="lineup">
+                @for (act of e.lineup; track act) { <li>{{ act }}</li> }
+              </ul>
+            </dd>
+          </div>
+        }
+      </dl>
+
+      @if (e.desc) {
+        <section class="about">
+          <h2>About</h2>
+          <p>{{ e.desc }}</p>
+        </section>
+      }
+
+      @if (gallery.length > 1) {
+        <section class="gallery">
+          <h2>Gallery</h2>
+          <div class="shots">
+            @for (src of gallery; track src) {
+              <img [src]="src" [alt]="e.name + ' photo'" loading="lazy" decoding="async" />
+            }
+          </div>
+        </section>
+      }
+
+      <section class="cta">
+        <h2>Going? Bring the crew.</h2>
+        <p>RSVP, rally a group of friends, and track the whole night — drinks, BAC and all — in the free Salut app.</p>
+        <div class="cta-actions">
+          <a class="btn btn-light" [href]="deepLink" target="_blank" rel="noopener">Open in Salut</a>
+          <a class="btn btn-ghost-light" [href]="appUrl" target="_blank" rel="noopener">Get the app</a>
+        </div>
+      </section>
+    </div>
+  </article>
+} @else {
+  <div class="notfound">
+    <p class="nf-emoji" aria-hidden="true">🔍</p>
+    <h1>Event not found</h1>
+    <p>This event isn’t available or may have ended.</p>
+    <a class="btn btn-primary" routerLink="/events">Browse events in Vienna</a>
+  </div>
+}
+
+<footer class="foot">
+  <a routerLink="/">Salut</a>
+  <span>·</span>
+  <a routerLink="/impressum">Impressum</a>
+  <span>·</span>
+  <a routerLink="/datenschutz">Datenschutz</a>
+  <span class="copy">© {{ year }} Salut</span>
+</footer>

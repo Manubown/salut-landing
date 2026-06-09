@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { eventResolver, eventsResolver } from './core/events/events.resolver';
 
 export const routes: Routes = [
   {
@@ -14,6 +15,18 @@ export const routes: Routes = [
     data: { locale: 'en' },
     loadComponent: () => import('./pages/home/home').then((m) => m.Home),
     title: 'Salut — Night-out app: BAC tracker, cocktails & drinking games',
+  },
+  {
+    path: 'events',
+    loadComponent: () => import('./pages/events/events').then((m) => m.Events),
+    resolve: { events: eventsResolver },
+    title: 'Events in Vienna — club nights & concerts | Salut',
+  },
+  {
+    path: 'events/:id',
+    loadComponent: () => import('./pages/event-detail/event-detail').then((m) => m.EventDetail),
+    resolve: { event: eventResolver },
+    // <title> is set per-event by SeoService in the component.
   },
   {
     path: 'impressum',

@@ -7,6 +7,7 @@ import {
 import express from 'express';
 import { join } from 'node:path';
 import { umamiOrigin } from './app/core/analytics/analytics.config';
+import { EVENTS_API } from './app/core/events/events.config';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -39,14 +40,17 @@ const angularApp = new AngularNodeAppEngine();
 // tracker (script-src) and receive the cookieless beacon (connect-src).
 const analyticsOrigin = umamiOrigin();
 const scriptSrc = ["'self'", "'unsafe-inline'", analyticsOrigin].filter(Boolean).join(' ');
-const connectSrc = ["'self'", analyticsOrigin].filter(Boolean).join(' ');
+// The browser reads the public events API directly (first-party data, no PII),
+// so its origin must be allowed for fetch/XHR. Event cover/gallery images can be
+// hosted anywhere in the curated set, so img-src allows any https origin.
+const connectSrc = ["'self'", analyticsOrigin, EVENTS_API].filter(Boolean).join(' ');
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "img-src 'self' data:",
+  "img-src 'self' data: https:",
   "font-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   `script-src ${scriptSrc}`,

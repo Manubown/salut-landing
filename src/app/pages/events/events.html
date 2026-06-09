@@ -1,0 +1,93 @@
+<header class="topbar">
+  <a routerLink="/" class="brand" aria-label="Salut home">Salut</a>
+  <a [href]="appUrl" class="btn btn-sm" target="_blank" rel="noopener">Get the app</a>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="eyebrow">Vienna · Nightlife</p>
+    <h1>What’s on in Vienna</h1>
+    <p class="lede">
+      The club nights, concerts and bar takeovers worth leaving the house for. Browse the lineup,
+      then <strong>RSVP and rally your crew</strong> in the Salut app.
+    </p>
+  </section>
+
+  @if (activeCategories().length) {
+    <nav class="filters" aria-label="Filter by genre">
+      <button type="button" class="chip" [class.on]="selectedCategory() === null" (click)="selectedCategory.set(null)">
+        All
+      </button>
+      @for (cat of activeCategories(); track cat.id) {
+        <button
+          type="button"
+          class="chip"
+          [class.on]="selectedCategory() === cat.id"
+          [style.--chip]="cat.color"
+          (click)="toggleCategory(cat.id)"
+        >
+          {{ cat.label }}
+        </button>
+      }
+    </nav>
+  }
+
+  @if (isEmpty()) {
+    <div class="empty">
+      <p class="empty-emoji" aria-hidden="true">🌙</p>
+      <h2>No events listed right now</h2>
+      <p>We’re curating Vienna’s best nights. Check back soon — or get the app and be first to know.</p>
+      <a [href]="appUrl" class="btn" target="_blank" rel="noopener">Get the Salut app</a>
+    </div>
+  } @else {
+    @for (section of sections(); track section.key) {
+      <section class="group">
+        <h2 class="group-title">{{ section.title }}</h2>
+        <ul class="grid" role="list">
+          @for (e of section.events; track e.id) {
+            <li>
+              <a class="card" [routerLink]="['/events', e.id]" [style.--accent]="e.theme.accent">
+                <div class="cover" [style.background]="'linear-gradient(135deg,' + e.theme.gradient[0] + ',' + e.theme.gradient[1] + ')'">
+                  @if (e.image) {
+                    <img [src]="e.image" [alt]="e.name" loading="lazy" decoding="async" />
+                  }
+                  @if (e.price) { <span class="price">{{ e.price }}</span> }
+                </div>
+                <div class="body">
+                  <p class="when">{{ e.dateLabel }}@if (e.timeLabel) { · {{ e.timeLabel }} }</p>
+                  <h3 class="name">{{ e.name }}</h3>
+                  <p class="venue">{{ e.club_name }}@if (e.city) { · {{ e.city }} }</p>
+                  @if (e.genres && e.genres.length) {
+                    <div class="tags">
+                      @for (gid of e.genres.slice(0, 3); track gid) {
+                        <span class="tag" [style.--tag]="genreColor(gid)">{{ genreLabel(gid) }}</span>
+                      }
+                    </div>
+                  }
+                  @if (e.going_count > 0) {
+                    <p class="going">🔥 {{ e.going_count }} going</p>
+                  }
+                </div>
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+
+  <section class="cta">
+    <h2>Your night, tracked.</h2>
+    <p>RSVP to events, rally a crew, track your drinks and BAC, and climb the leaderboard — all in the free Salut app.</p>
+    <a [href]="appUrl" class="btn btn-lg" target="_blank" rel="noopener">Get the Salut app</a>
+  </section>
+</main>
+
+<footer class="foot">
+  <a routerLink="/">Salut</a>
+  <span>·</span>
+  <a routerLink="/impressum">Impressum</a>
+  <span>·</span>
+  <a routerLink="/datenschutz">Datenschutz</a>
+  <span class="copy">© {{ year }} Salut</span>
+</footer>

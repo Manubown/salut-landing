@@ -13,6 +13,7 @@ import { ClickPopDirective } from '../../keynote/click-pop.directive';
 import { SeoService, SITE_URL } from '../../core/seo/seo.service';
 import { DEFAULT_LOCALE, Locale, homePath } from '../../core/i18n/locale';
 import { HOME_COPY, HomeCopy } from './home.content';
+import { APP_URL } from '../../core/app-links';
 
 interface Cocktail {
   name: string;
@@ -21,12 +22,6 @@ interface Cocktail {
   /** Liquid tint for the glass illustration. */
   color: string;
 }
-
-/**
- * The live web app (an installable PWA). The app owns the install prompt;
- * the landing sends people there. Single place to change if the domain moves.
- */
-export const APP_URL = 'https://salut-web.bressler.at';
 
 @Component({
   selector: 'salut-home',
