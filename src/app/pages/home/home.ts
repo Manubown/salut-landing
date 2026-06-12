@@ -10,6 +10,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ScrubStage } from '../../keynote/scrub-stage.component';
 import { DrinkGlass, GlassType } from '../../keynote/drink-glass.component';
 import { ClickPopDirective } from '../../keynote/click-pop.directive';
+import { MagneticDirective } from '../../keynote/magnetic.directive';
+import { HeroStage } from '../../components/hero-stage/hero-stage';
 import { SeoService, SITE_URL } from '../../core/seo/seo.service';
 import { DEFAULT_LOCALE, Locale, homePath } from '../../core/i18n/locale';
 import { HOME_COPY, HomeCopy } from './home.content';
@@ -24,9 +26,12 @@ interface Cocktail {
   color: string;
 }
 
+/** Full intro plays once per browser session; later visits get a quick rise. */
+const INTRO_SEEN_KEY = 'salut:intro';
+
 @Component({
   selector: 'salut-home',
-  imports: [RouterLink, ScrubStage, DrinkGlass, ClickPopDirective],
+  imports: [RouterLink, ScrubStage, DrinkGlass, ClickPopDirective, MagneticDirective, HeroStage],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -74,29 +79,81 @@ export class Home implements OnInit {
     { pos: 4, name: 'Lena', pts: 1110 },
   ];
 
-  constructor() {
-    // Premium pointer/gyro tilt on the hero device. Browser-only, motion-safe.
-    afterNextRender(() => {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      const root = this.host.nativeElement as HTMLElement;
-      const device = root.querySelector<HTMLElement>('.hero__device');
-      const scene = root.querySelector<HTMLElement>('.hero__art');
-      if (!device || !scene) return;
+  /** Letters of the preloader wordmark (the dot is punch-coloured via CSS). */
+  protected readonly introLetters = ['S', 'A', 'L', 'U', 'T', '.'];
 
-      const onMove = (e: PointerEvent) => {
-        const r = scene.getBoundingClientRect();
-        const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
-        const dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
-        device.style.setProperty('--rx', `${(-dy * 6).toFixed(2)}deg`);
-        device.style.setProperty('--ry', `${(dx * 8).toFixed(2)}deg`);
-      };
-      const reset = () => {
-        device.style.setProperty('--rx', '0deg');
-        device.style.setProperty('--ry', '0deg');
-      };
-      scene.addEventListener('pointermove', onMove);
-      scene.addEventListener('pointerleave', reset);
-    });
+  constructor() {
+    // Intro preloader + hero entrance choreography. Browser-only.
+    afterNextRender(() => void this.choreograph());
+  }
+
+  /**
+   * One GSAP timeline runs the whole opening: wordmark reveal → overlay
+   * wipe → hero copy rise. The overlay markup ships in the SSR HTML (it
+   * doubles as a splash while the app hydrates); reduced-motion and any
+   * GSAP failure tear it down immediately so content is never trapped.
+   */
+  private async choreograph(): Promise<void> {
+    const root = this.host.nativeElement as HTMLElement;
+    const intro = root.querySelector<HTMLElement>('.intro');
+    const finish = () => intro?.remove();
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      finish();
+      return;
+    }
+
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem(INTRO_SEEN_KEY) === '1';
+      sessionStorage.setItem(INTRO_SEEN_KEY, '1');
+    } catch {
+      /* storage blocked — treat as first visit */
+    }
+
+    try {
+      const { gsap } = await import('gsap');
+      const lines = root.querySelectorAll('[data-anim="line"]');
+      const rises = root.querySelectorAll('[data-anim="rise"]');
+      const chrome = root.querySelectorAll('[data-anim="chrome"]');
+
+      const tl = gsap.timeline({ defaults: { ease: 'expo.out' }, onComplete: finish });
+      gsap.set(lines, { yPercent: 110 });
+      gsap.set(rises, { autoAlpha: 0, y: 36 });
+      gsap.set(chrome, { autoAlpha: 0, y: -16 });
+
+      if (intro && !seen) {
+        const letters = intro.querySelectorAll('.intro__letter');
+        const line = intro.querySelector('.intro__line');
+        const tag = intro.querySelector('.intro__tag');
+        const mark = intro.querySelector('.intro__mark');
+
+        tl.to(mark, { autoAlpha: 0, duration: 0.25, ease: 'power1.out' }, 0)
+          // fromTo: the CSS translateY(110%) is read back as a baked px
+          // matrix — reset y and let yPercent own the slide.
+          .fromTo(
+            letters,
+            { y: 0, yPercent: 110 },
+            { yPercent: 0, duration: 0.9, stagger: 0.07 },
+            0.15,
+          )
+          .fromTo(line, { scaleX: 0 }, { scaleX: 1, duration: 0.9, ease: 'expo.inOut' }, 0.35)
+          .fromTo(tag, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, 0.8)
+          .to({}, { duration: 0.45 }) // hold the wordmark
+          .to(letters, { yPercent: -110, duration: 0.55, stagger: 0.045, ease: 'expo.in' })
+          .to([line, tag], { autoAlpha: 0, duration: 0.3 }, '<')
+          .to(intro, { clipPath: 'inset(0 0 100% 0)', duration: 0.9, ease: 'expo.inOut' }, '-=0.1');
+      } else if (intro) {
+        tl.to(intro, { autoAlpha: 0, duration: 0.45, ease: 'power2.out' }, 0);
+      }
+
+      // Hero entrance overlaps the tail of the wipe.
+      tl.to(lines, { yPercent: 0, duration: 1.1, stagger: 0.12 }, intro && !seen ? '-=0.55' : 0.1)
+        .to(chrome, { autoAlpha: 1, y: 0, duration: 0.7 }, '-=0.9')
+        .to(rises, { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.08 }, '-=0.85');
+    } catch {
+      finish(); // GSAP chunk failed — show everything as-is
+    }
   }
 
   ngOnInit(): void {

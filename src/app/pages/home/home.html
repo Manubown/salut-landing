@@ -1,6 +1,23 @@
 <a class="skip-link" href="#cocktails">{{ c.skip }}</a>
 
-<header class="site-header">
+<!-- ░░ INTRO / PRELOADER — wiped away by the GSAP timeline ░░ -->
+<div class="intro" aria-hidden="true">
+  <span class="intro__mark">S</span>
+  <div class="intro__center">
+    <span class="intro__word">
+      @for (ch of introLetters; track $index) {
+        <b class="intro__letter">{{ ch }}</b>
+      }
+    </span>
+    <span class="intro__line"></span>
+    <span class="intro__tag">{{ c.introTagline }}</span>
+  </div>
+</div>
+
+<!-- Film-grain texture over the whole page -->
+<div class="grain" aria-hidden="true"></div>
+
+<header class="site-header" data-anim="chrome">
   <div class="container site-header__inner">
     <a class="brand" href="/" aria-label="Salut — home">
       <span class="brand__mark" aria-hidden="true">S</span>
@@ -17,68 +34,63 @@
         aria-label="Change language / Sprache wechseln"
         >{{ otherLabel }}</a
       >
-      <a class="btn btn--primary site-header__cta" [href]="appUrl" target="_blank" rel="noopener">{{ c.navOpen }}</a>
+      <a class="btn btn--primary site-header__cta" salutMagnetic [href]="appUrl" target="_blank" rel="noopener">{{
+        c.navOpen
+      }}</a>
     </nav>
   </div>
 </header>
 
 <main id="top">
-  <!-- ░░ HERO ░░ -->
-  <section class="hero">
-    <div class="hero__aurora" aria-hidden="true"></div>
-    <div class="hero__backscreens" aria-hidden="true">
-      <span class="bs bs--1"></span>
-      <span class="bs bs--2"></span>
-      <span class="bs bs--3"></span>
+  <!-- ░░ HERO — party light show → it's all on a 3D phone → first round logged ░░ -->
+  <salut-hero-stage [notes]="c.heroNotes">
+    <div slot="phase-a" class="container hero-cap hero-cap--a">
+      <h1 class="hero__title">
+        <span class="line"><span class="line__in" data-anim="line">{{ c.heroTitleA }}</span></span>
+        <span class="line"><span class="line__in hl" data-anim="line">{{ c.heroTitleHl }}</span></span>
+      </h1>
+      <p class="hero__lede" data-anim="rise">{{ c.heroLede }}</p>
+      <ul class="hero__proof" data-anim="rise">
+        @for (p of c.proof; track p; let last = $last) {
+          <li>{{ p }}</li>
+          @if (!last) { <li aria-hidden="true">·</li> }
+        }
+      </ul>
+      <span class="hero__hint" data-anim="rise">{{ c.scroll }} <i aria-hidden="true">↓</i></span>
     </div>
 
-    <div class="container hero__grid">
-      <div class="hero__copy">
-        <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span> {{ c.heroEyebrow }}</span>
-        <h1 class="hero__title">
-          {{ c.heroTitleA }}<br />
-          <span class="hl">{{ c.heroTitleHl }}</span>
-        </h1>
-        <p class="hero__lede">{{ c.heroLede }}</p>
+    <div slot="phase-b" class="container hero-cap hero-cap--side">
+      <div class="hero-cap__panel">
+        <h2 class="hero-cap__title">{{ c.heroRevealTitle }}</h2>
+        <p class="hero-cap__lede">{{ c.heroRevealLede }}</p>
+      </div>
+    </div>
+
+    <div slot="phase-c" class="container hero-cap hero-cap--side">
+      <div class="hero-cap__panel">
+        <h2 class="hero-cap__title">{{ c.heroTrackTitle }}</h2>
+        <p class="hero-cap__lede">{{ c.heroTrackLede }}</p>
         <div class="hero__cta">
-          <a class="btn btn--primary btn--lg" [href]="appUrl" target="_blank" rel="noopener">
+          <a class="btn btn--primary btn--lg" salutMagnetic [href]="appUrl" target="_blank" rel="noopener">
             {{ c.ctaOpen }} <span aria-hidden="true">→</span>
           </a>
-          <a class="btn btn--lg" href="#bac">{{ c.ctaTour }}</a>
-        </div>
-        <ul class="hero__proof">
-          @for (p of c.proof; track p; let last = $last) {
-            <li>{{ p }}</li>
-            @if (!last) { <li aria-hidden="true">·</li> }
-          }
-        </ul>
-      </div>
-
-      <div class="hero__art" aria-hidden="true">
-        <div class="phone phone--app hero__device">
-          <div class="phone__notch"></div>
-          <div class="phone__screen">
-            <div class="appbar"><span class="appbar__word">Salut</span></div>
-            <div class="bac">
-              <span class="bac__label">Tonight</span>
-              <div class="bac__readout"><b>0.62</b><span>‰</span></div>
-              <div class="gauge"><span style="--p: 56%"></span></div>
-              <p class="bac__meta">Sober by <b>02:40</b> · burning 0.13‰/h</p>
-            </div>
-            <div class="drink-row"><span class="drink-row__ic">🍺</span><span class="drink-row__name">Lager · 0.5 L</span><span class="drink-row__time">23:14</span></div>
-            <div class="drink-row"><span class="drink-row__ic">🍸</span><span class="drink-row__name">Negroni</span><span class="drink-row__time">23:46</span></div>
-            <div class="tabbar">
-              <span class="tabbar__ic">⌂</span><span class="tabbar__ic">☰</span>
-              <span class="tabbar__fab">＋</span>
-              <span class="tabbar__ic">▦</span><span class="tabbar__ic">◍</span>
-            </div>
-          </div>
+          <a class="btn btn--ghost btn--lg" href="#cocktails">{{ c.ctaTour }}</a>
         </div>
       </div>
     </div>
+  </salut-hero-stage>
 
-    <span class="scroll-cue" aria-hidden="true">{{ c.scroll }}<i></i></span>
-  </section>
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee__track">
+      @for (rep of [0, 1]; track rep) {
+        <div class="marquee__group">
+          @for (w of c.marquee; track $index) {
+            <span class="marquee__item"><i>✦</i>{{ w }}</span>
+          }
+        </div>
+      }
+    </div>
+  </div>
 
   <!-- ░░ ACT 1 · BAC (scroll-scrub) ░░ -->
   <salut-scrub-stage id="bac" motion="bar" accent="#56ccf2" [label]="c.bacLabel" [scrollLength]="2.4">
@@ -91,6 +103,7 @@
 
   <!-- ░░ ACT 2 · COCKTAILS ░░ -->
   <section id="cocktails" class="act act--cocktails">
+    <span class="act__num" aria-hidden="true">01</span>
     <div class="container">
       <div class="act__head act__reveal">
         <span class="eyebrow">{{ c.ckEyebrow }}</span>
@@ -119,25 +132,31 @@
 
   <!-- ░░ ACT · EVENTS (funnel → /events) ░░ -->
   <section id="events" class="act act--events">
+    <span class="act__num" aria-hidden="true">02</span>
     <div class="container">
       <div class="act__head act__head--center act__reveal">
         <span class="eyebrow">{{ c.evEyebrow }}</span>
         <h2 class="act__title">{{ c.evTitle }}</h2>
         <p class="act__lede">{{ c.evLede }}</p>
       </div>
-      <ul class="ev-cats act__reveal">
-        @for (cat of eventCats; track cat.id) {
-          <li class="ev-cat" [style.--g1]="cat.gradient[0]" [style.--g2]="cat.gradient[1]">{{ cat.label }}</li>
+      <ul class="ev-cats">
+        @for (cat of eventCats; track cat.id; let i = $index) {
+          <li class="ev-cat" [style.--i]="i" [style.--g1]="cat.gradient[0]" [style.--g2]="cat.gradient[1]">
+            {{ cat.label }}
+          </li>
         }
       </ul>
       <div class="act__foot">
-        <a class="btn btn--primary btn--lg" routerLink="/events">{{ c.evCta }} <span aria-hidden="true">→</span></a>
+        <a class="btn btn--primary btn--lg" salutMagnetic routerLink="/events"
+          >{{ c.evCta }} <span aria-hidden="true">→</span></a
+        >
       </div>
     </div>
   </section>
 
   <!-- ░░ ACT 3 · THE CREW ░░ -->
   <section class="act act--crew">
+    <span class="act__num" aria-hidden="true">03</span>
     <div class="crew__screens parallax" aria-hidden="true">
       <span class="bs bs--a"></span>
       <span class="bs bs--b"></span>
@@ -156,8 +175,8 @@
       <div class="act__media act__reveal" aria-hidden="true">
         <div class="lb">
           <span class="lb__head">{{ c.lbHead }}</span>
-          @for (r of ranks; track r.pos) {
-            <div class="lb__row" [class.lb__row--you]="r.you">
+          @for (r of ranks; track r.pos; let i = $index) {
+            <div class="lb__row" [style.--i]="i" [class.lb__row--you]="r.you">
               <span class="lb__pos">{{ r.pos }}</span>
               <span class="lb__name">{{ r.you ? c.lbYou : r.name }}</span>
               <span class="lb__pts">{{ r.pts }} pts</span>
@@ -170,6 +189,7 @@
 
   <!-- ░░ ACT 4 · GAMES ░░ -->
   <section class="act act--games">
+    <span class="act__num" aria-hidden="true">04</span>
     <div class="container act__grid">
       <div class="act__media" aria-hidden="true">
         <div class="wheel"><span class="wheel__pin"></span></div>
@@ -197,14 +217,15 @@
 
   <!-- ░░ FAQ (structured data) ░░ -->
   <section id="faq" class="act act--faq">
+    <span class="act__num" aria-hidden="true">05</span>
     <div class="container container--narrow">
       <div class="act__head act__head--center act__reveal">
         <span class="eyebrow">{{ c.faqEyebrow }}</span>
         <h2 class="act__title">{{ c.faqTitle }}</h2>
       </div>
-      <div class="faq act__reveal">
-        @for (item of c.faq; track item.q) {
-          <details class="faq__item">
+      <div class="faq">
+        @for (item of c.faq; track item.q; let i = $index) {
+          <details class="faq__item" [style.--i]="i">
             <summary class="faq__q">{{ item.q }}</summary>
             <p class="faq__a">{{ item.a }}</p>
           </details>
@@ -212,10 +233,10 @@
       </div>
     </div>
   </section>
-
 </main>
 
 <footer class="site-footer">
+  <div class="site-footer__word" aria-hidden="true">Salut</div>
   <div class="container site-footer__inner">
     <span class="brand"><span class="brand__mark" aria-hidden="true">S</span> Salut</span>
     <nav class="site-footer__links" aria-label="Footer">

@@ -12,7 +12,11 @@ export interface HomeCopy {
   navEvents: string;
   navOpen: string;
 
-  heroEyebrow: string;
+  /** Preloader tag line under the wordmark. */
+  introTagline: string;
+  /** Hero marquee ticker items. */
+  marquee: string[];
+
   heroTitleA: string;
   heroTitleHl: string;
   heroLede: string;
@@ -20,6 +24,15 @@ export interface HomeCopy {
   ctaTour: string;
   proof: string[];
   scroll: string;
+
+  /** Hero beat B — the party was on the phone all along. */
+  heroRevealTitle: string;
+  heroRevealLede: string;
+  /** Hero beat C — the app opens and the first round gets logged. */
+  heroTrackTitle: string;
+  heroTrackLede: string;
+  /** Push notifications popping off the 3D phone (friends tracking drinks). */
+  heroNotes: { title: string; body: string; time: string }[];
 
   bacEyebrow: string;
   bacTitle: string;
@@ -72,7 +85,17 @@ const EN: HomeCopy = {
   navEvents: 'Events',
   navOpen: 'Open app',
 
-  heroEyebrow: 'Live now · Free · No app store',
+  introTagline: 'Your night. One app.',
+  marquee: [
+    'Live BAC tracker',
+    '15 cocktail recipes',
+    'Drinking games',
+    'Leaderboard',
+    'Events in Vienna',
+    'On your home screen',
+    'Free forever',
+  ],
+
   heroTitleA: 'Your whole night out,',
   heroTitleHl: 'one tap away.',
   heroLede:
@@ -81,6 +104,18 @@ const EN: HomeCopy = {
   ctaTour: 'Take the tour',
   proof: ['Free forever', 'iPhone & Android', 'Nothing to download'],
   scroll: 'Scroll',
+
+  heroRevealTitle: 'The whole night, already in your hand.',
+  heroRevealLede:
+    'No download, no app store. Salut lives in your browser — full-screen, straight from your home screen.',
+  heroTrackTitle: 'Open Salut. Log the first round.',
+  heroTrackLede:
+    'Your BAC climbs in real time and counts down to sober — the same Widmark formula a promille calculator uses.',
+  heroNotes: [
+    { title: 'Mara is out tonight', body: 'Tracked an Aperol Spritz 🍹', time: 'now' },
+    { title: 'Jonas earned +90 pts', body: 'Negroni logged · #2 on the board', time: '1m' },
+    { title: 'Crew leaderboard', body: 'Lena just overtook you — +120 pts', time: '2m' },
+  ],
 
   bacEyebrow: 'Your night, measured',
   bacTitle: 'A live BAC & promille tracker.',
@@ -164,7 +199,17 @@ const DE: HomeCopy = {
   navEvents: 'Events',
   navOpen: 'App öffnen',
 
-  heroEyebrow: 'Jetzt live · Gratis · Ohne App-Store',
+  introTagline: 'Dein Abend. Eine App.',
+  marquee: [
+    'Live-Promille-Tracker',
+    '15 Cocktail-Rezepte',
+    'Trinkspiele',
+    'Leaderboard',
+    'Events in Wien',
+    'Auf deinem Homescreen',
+    'Für immer gratis',
+  ],
+
   heroTitleA: 'Dein ganzer Abend —',
   heroTitleHl: 'in einer App.',
   heroLede:
@@ -173,6 +218,18 @@ const DE: HomeCopy = {
   ctaTour: 'Tour ansehen',
   proof: ['Für immer gratis', 'iPhone & Android', 'Kein Download'],
   scroll: 'Scrollen',
+
+  heroRevealTitle: 'Die ganze Nacht — schon in deiner Hand.',
+  heroRevealLede:
+    'Kein Download, kein App-Store. Salut lebt im Browser — im Vollbild, direkt vom Homescreen.',
+  heroTrackTitle: 'Salut öffnen. Erste Runde loggen.',
+  heroTrackLede:
+    'Dein Promille-Wert steigt in Echtzeit und zählt runter, bis du nüchtern bist — mit der Widmark-Formel wie im Promille-Rechner.',
+  heroNotes: [
+    { title: 'Mara ist unterwegs', body: 'Aperol Spritz getrackt 🍹', time: 'jetzt' },
+    { title: 'Jonas: +90 Punkte', body: 'Negroni geloggt · Platz 2', time: '1 Min.' },
+    { title: 'Crew-Leaderboard', body: 'Lena hat dich überholt — +120 Pkt.', time: '2 Min.' },
+  ],
 
   bacEyebrow: 'Dein Abend, gemessen',
   bacTitle: 'Live-Promille-Rechner.',

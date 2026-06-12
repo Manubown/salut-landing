@@ -1,0 +1,67 @@
+:host { display: block; }
+
+.hstage { position: relative; background: #0c0717; }
+
+/* Default (no JS / reduced motion / no WebGL): captions stack as normal
+   sections over the venue gradient — everything readable, nothing pinned. */
+.hstage__stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s-7);
+  min-height: 100svh;
+  padding: 120px 0 var(--s-8);
+  overflow: clip;
+  background: radial-gradient(120% 80% at 50% 0%, #221645 0%, #140d22 55%, #0c0717 100%);
+}
+
+.hstage__gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+:host(.is-flat) .hstage__gl { display: none; }
+
+.hstage__cap { position: relative; z-index: 2; }
+
+/* Animated mode: one pinned viewport, captions become overlay layers whose
+   opacity/position the render loop drives. */
+:host(.is-anim) .hstage__stage {
+  display: block;
+  height: 100vh; /* vh, not svh — covers the band behind a hiding mobile URL bar */
+  min-height: 0;
+  padding: 0;
+}
+:host(.is-anim) .hstage__cap {
+  position: absolute;
+  inset-inline: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+:host(.is-anim) .hstage__cap--a {
+  top: 50%;
+  translate: 0 -50%;
+}
+:host(.is-anim) .hstage__cap--b,
+:host(.is-anim) .hstage__cap--c {
+  top: 50%;
+  translate: 0 -50%;
+  opacity: 0;
+  visibility: hidden;
+}
+/* NOTE: clickability of the projected captions is driven from the render
+   loop (style.pointerEvents) — scoped CSS can't reach projected children. */
+
+/* On phones the captions sit in a bottom band instead of beside the device. */
+@media (max-width: 768px) {
+  :host(.is-anim) .hstage__cap--b,
+  :host(.is-anim) .hstage__cap--c {
+    top: auto;
+    bottom: 7svh;
+    translate: 0 0;
+  }
+}

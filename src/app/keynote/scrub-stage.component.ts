@@ -8,25 +8,27 @@ import {
   input,
   viewChild,
 } from '@angular/core';
+import { UiPainter, UiMode } from '../three/ui-painter';
+import { makeScreenMaterial } from '../three/screen-shader';
+import { PHONE, buildPhone, lerp, makeEnvironment, remap, smooth } from '../three/phone-rig';
 
-/** Placeholder motion style used until a real frame sequence is supplied. */
-export type ScrubMotion = 'bar' | 'spin' | 'fly';
+/** Which app scene plays on the phone screen. */
+export type ScrubMotion = 'bar' | 'fly';
 
 /**
- * Apple-keynote-style scroll-scrub stage.
+ * Apple-keynote-style scroll-scrub stage — now a real 3D phone.
  *
- * Pins a full-viewport canvas and advances it frame-by-frame as the user
- * scrolls (GSAP ScrollTrigger). Apple's product pages do this with image
- * sequences — not `<video>` — because iOS Safari can't seek a video smoothly;
- * we follow the same approach.
+ * Pins a full-viewport WebGL stage and choreographs a procedural 3D phone
+ * (liquid-glass screen, clearcoat reflections) as the user scrolls:
+ * the device rises and turns in, then its UI plays through the act —
+ * the BAC dial climbing ('bar') or the app icon landing on the home
+ * screen ('fly'). The phone also leans toward the pointer.
  *
- * - `frames` empty  → draws on-brand *synthetic* placeholder frames so the
- *   mechanic is demoable before any recording exists.
- * - `frames` set    → preloads the sequence (frame-0001.webp …) and scrubs it.
- *
- * SSR-safe: all browser work runs in `afterNextRender`, and GSAP is
- * dynamically imported so it never enters the server bundle. Honors
- * `prefers-reduced-motion` by painting one static frame with no pin/scrub.
+ * SSR-safe: three.js and GSAP are dynamically imported in `afterNextRender`
+ * and stay out of the server bundle. The heavy init is deferred until the
+ * stage approaches the viewport. `prefers-reduced-motion` renders one
+ * static frame with no pin. No WebGL → the styled section with its caption
+ * remains.
  */
 @Component({
   selector: 'salut-scrub-stage',
@@ -35,10 +37,10 @@ export type ScrubMotion = 'bar' | 'spin' | 'fly';
   template: `
     <div class="scrub" #host>
       <div class="scrub__stage" #stage>
-        @if (poster()) {
-          <img class="scrub__poster" [src]="poster()" alt="" aria-hidden="true" />
-        }
         <canvas class="scrub__canvas" #canvas aria-hidden="true"></canvas>
+        @if (label()) {
+          <span class="scrub__label">{{ label() }}</span>
+        }
         <div class="scrub__caption">
           <ng-content />
         </div>
@@ -48,87 +50,193 @@ export type ScrubMotion = 'bar' | 'spin' | 'fly';
   styleUrl: './scrub-stage.component.scss',
 })
 export class ScrubStage {
-  /** Real frame URLs (e.g. seq/bac/frame-0001.webp …). Empty → synthetic. */
-  readonly frames = input<readonly string[]>([]);
-  /** Frame count used in synthetic mode. */
-  readonly frameCount = input(90);
+  /** App scene on the screen: 'bar' = BAC dial, 'fly' = home-screen install. */
+  readonly motion = input<ScrubMotion>('bar');
   /** How long the pin lasts, in multiples of the viewport height. */
   readonly scrollLength = input(2.2);
-  /** Accent colour for synthetic placeholder frames. */
+  /** Accent colour (FAB, flying icon, rim light). */
   readonly accent = input('#ff6f5e');
-  /** Caption drawn under the device in synthetic mode. */
+  /** Small caption under the device. */
   readonly label = input('');
-  /** Placeholder motion style. */
-  readonly motion = input<ScrubMotion>('bar');
-  /** Poster image shown for SSR / first paint / reduced-motion. */
-  readonly poster = input<string | null>(null);
 
-  private readonly host = viewChild.required<ElementRef<HTMLElement>>('host');
+  private readonly hostRef = viewChild.required<ElementRef<HTMLElement>>('host');
   private readonly stage = viewChild.required<ElementRef<HTMLElement>>('stage');
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
-    afterNextRender(() => void this.init());
+    afterNextRender(() => {
+      // Defer the WebGL context + three.js work until the act draws near.
+      const host = this.hostRef().nativeElement;
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver(
+          (entries, obs) => {
+            if (entries.some((e) => e.isIntersecting)) {
+              obs.disconnect();
+              void this.init();
+            }
+          },
+          { rootMargin: '120% 0px' },
+        );
+        io.observe(host);
+        this.destroyRef.onDestroy(() => io.disconnect());
+      } else {
+        void this.init();
+      }
+    });
   }
 
   private async init(): Promise<void> {
     const canvas = this.canvas().nativeElement;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const host = this.host().nativeElement;
-    const urls = this.frames();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const sizeCanvas = () => {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = Math.max(1, Math.round(rect.width * dpr));
-      canvas.height = Math.max(1, Math.round(rect.height * dpr));
-    };
-
-    let images: HTMLImageElement[] = [];
-    let progress = 0;
-    const render = () => {
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-      if (images.length) {
-        const i = Math.max(0, Math.min(images.length - 1, Math.round(progress * (images.length - 1))));
-        this.drawCover(ctx, images[i], w, h);
-        host.classList.add('is-painted');
-      } else if (!urls.length) {
-        this.drawSynthetic(ctx, w, h, progress);
-        host.classList.add('is-painted');
-      }
-      // Real frames not yet loaded → leave transparent so the poster shows.
-    };
-
-    sizeCanvas();
-    render();
-
+    const stageEl = this.stage().nativeElement;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+    const mode: UiMode = this.motion() === 'fly' ? 'install' : 'track';
+    const accent = this.accent();
 
-    const activate = async () => {
-      if (reduced) {
-        // Static: synthetic mid-frame, or (real mode) just keep the poster.
-        if (!urls.length) {
-          progress = 0.5;
-          render();
-        }
-        const onResize = () => {
-          sizeCanvas();
-          render();
-        };
-        window.addEventListener('resize', onResize, { passive: true });
-        this.destroyRef.onDestroy(() => window.removeEventListener('resize', onResize));
-        return;
-      }
+    let THREE: typeof import('three');
+    try {
+      THREE = await import('three');
+    } catch {
+      return;
+    }
+    let renderer: import('three').WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance',
+      });
+    } catch {
+      return;
+    }
+    renderer.setClearColor(0x000000, 0);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1.75 : 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
-      if (urls.length) {
-        images = await this.preload(urls);
-        render();
-      }
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 30);
+    scene.environment = await makeEnvironment(THREE, renderer);
 
+    const painter = new UiPainter();
+    const appTex = new THREE.CanvasTexture(painter.canvas);
+    painter.draw(mode, 0, 1, accent);
+    appTex.needsUpdate = true;
+    const { material: screenMat, uniforms: su } = makeScreenMaterial(THREE, appTex);
+    su.uMix.value = 1; // scrub stages show the app directly, no party scene
+    const rig = await buildPhone(THREE, screenMat);
+    scene.add(rig.group);
+    void document.fonts?.ready.then(() => painter.invalidate());
+
+    scene.add(new THREE.AmbientLight(0x8a7fb0, 0.55));
+    const key = new THREE.DirectionalLight(0xffffff, 1.5);
+    key.position.set(-2.5, 3, 4);
+    scene.add(key);
+    const rim = new THREE.PointLight(new THREE.Color(accent), 5, 12);
+    rim.position.set(2.4, -0.6, 2.4);
+    scene.add(rim);
+
+    let zCam = 5;
+    const layout = () => {
+      const w = stageEl.clientWidth || 1;
+      const h = stageEl.clientHeight || 1;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      const tanV = Math.tan((camera.fov * Math.PI) / 360);
+      const tanH = tanV * camera.aspect;
+      zCam = Math.max((PHONE.H * 1.45) / 2 / tanV, (PHONE.W * 2.6) / 2 / tanH);
+      camera.position.set(0, 0, zCam);
+      camera.lookAt(0, 0, 0);
+    };
+    layout();
+    const ro = new ResizeObserver(() => {
+      layout();
+      if (staticMode) renderOnce(0.55);
+    });
+    ro.observe(stageEl);
+
+    // pointer tilt (listener on the stage so it only reacts in-act)
+    let tx = 0;
+    let ty = 0;
+    const onPointer = (e: PointerEvent) => {
+      const r = stageEl.getBoundingClientRect();
+      tx = ((e.clientX - r.left) / r.width) * 2 - 1;
+      ty = -(((e.clientY - r.top) / r.height) * 2 - 1);
+    };
+    stageEl.addEventListener('pointermove', onPointer, { passive: true });
+
+    let progress = 0;
+    let pr = 0;
+    let time = 0;
+    let last = performance.now();
+    const px = { x: 0, y: 0 };
+
+    const apply = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      time += dt;
+      pr += (progress - pr) * Math.min(1, dt * 8);
+      px.x += (tx - px.x) * Math.min(1, dt * 4);
+      px.y += (ty - px.y) * Math.min(1, dt * 4);
+
+      su.uTime.value = time;
+      rig.glassUniforms.uTime.value = time;
+      rig.glassUniforms.uStreak.value.set(px.x, px.y);
+
+      // entrance — the device rises and turns to face the room
+      const entry = smooth(remap(pr, 0, 0.24));
+      rig.glassUniforms.uReveal.value = entry;
+      rig.group.position.y = lerp(-2.6, 0, entry) + Math.sin(time * 0.55) * 0.025 * entry;
+      rig.group.rotation.y = lerp(0.85, -0.16, entry) + px.x * 0.16 * entry + Math.sin(time * 0.4) * 0.03;
+      rig.group.rotation.x = lerp(0.12, 0.03, entry) + px.y * -0.1 * entry;
+
+      // the act itself plays on the screen
+      const uiP = remap(pr, 0.22, 0.92);
+      if (painter.draw(mode, uiP, 1, accent)) appTex.needsUpdate = true;
+
+      // settle/exit — a touch of presence before the pin releases
+      rig.group.scale.setScalar(1 + smooth(remap(pr, 0.92, 1)) * 0.03);
+
+      renderer.render(scene, camera);
+    };
+
+    let staticMode = false;
+    const renderOnce = (p: number) => {
+      su.uTime.value = 3;
+      rig.glassUniforms.uTime.value = 3;
+      painter.draw(mode, p, 1, accent);
+      appTex.needsUpdate = true;
+      rig.group.position.set(0, 0, 0);
+      rig.group.rotation.set(0.03, -0.16, 0);
+      renderer.render(scene, camera);
+    };
+
+    let dead = false;
+    const teardown = () => {
+      dead = true;
+      ro.disconnect();
+      stageEl.removeEventListener('pointermove', onPointer);
+      renderer.setAnimationLoop(null);
+      rig.dispose();
+      screenMat.dispose();
+      appTex.dispose();
+      renderer.dispose();
+    };
+
+    if (reduced) {
+      staticMode = true;
+      renderOnce(0.55);
+      // re-render once webfonts land (the loop isn't running to pick it up)
+      void document.fonts?.ready.then(() => {
+        if (!dead) renderOnce(0.55);
+      });
+      this.destroyRef.onDestroy(teardown);
+      return;
+    }
+
+    try {
       const [{ gsap }, { ScrollTrigger }] = await Promise.all([
         import('gsap'),
         import('gsap/ScrollTrigger'),
@@ -136,8 +244,8 @@ export class ScrubStage {
       gsap.registerPlugin(ScrollTrigger);
 
       const trigger = ScrollTrigger.create({
-        trigger: host,
-        pin: this.stage().nativeElement,
+        trigger: this.hostRef().nativeElement,
+        pin: stageEl,
         start: 'top top',
         // Shorter pin on phones so the act doesn't drag (recomputed on refresh).
         end: () =>
@@ -149,377 +257,43 @@ export class ScrubStage {
         invalidateOnRefresh: true,
         onUpdate: (self) => {
           progress = self.progress;
-          render();
         },
-        onRefresh: () => {
-          sizeCanvas();
-          render();
-        },
+        onRefresh: () => layout(),
       });
-      this.destroyRef.onDestroy(() => trigger.kill());
-    };
 
-    // Defer the heavy frame preload until the stage nears the viewport.
-    // Synthetic mode is cheap, so it activates immediately.
-    if (urls.length && 'IntersectionObserver' in window) {
-      const io = new IntersectionObserver(
-        (entries, obs) => {
-          if (entries.some((e) => e.isIntersecting)) {
-            obs.disconnect();
-            void activate();
-          }
-        },
-        { rootMargin: '150% 0px' },
-      );
-      io.observe(host);
-      this.destroyRef.onDestroy(() => io.disconnect());
-    } else {
-      void activate();
+      // The hero pin (created in parallel) inserts a multi-viewport spacer
+      // above this act; re-measure all triggers so start/end stay correct
+      // regardless of which stage finished init first.
+      ScrollTrigger.refresh();
+
+      let inView = true;
+      let visible = !document.hidden;
+      const loop = () => {
+        last = performance.now();
+        renderer.setAnimationLoop(inView && visible ? apply : null);
+      };
+      const io = new IntersectionObserver((entries) => {
+        inView = entries.some((e) => e.isIntersecting);
+        loop();
+      });
+      io.observe(this.hostRef().nativeElement);
+      const onVis = () => {
+        visible = !document.hidden;
+        loop();
+      };
+      document.addEventListener('visibilitychange', onVis);
+      loop();
+
+      this.destroyRef.onDestroy(() => {
+        trigger.kill();
+        io.disconnect();
+        document.removeEventListener('visibilitychange', onVis);
+        teardown();
+      });
+    } catch {
+      staticMode = true;
+      renderOnce(0.55);
+      this.destroyRef.onDestroy(teardown);
     }
-  }
-
-  private preload(urls: readonly string[]): Promise<HTMLImageElement[]> {
-    return Promise.all(
-      urls.map(
-        (src) =>
-          new Promise<HTMLImageElement>((resolve) => {
-            const img = new Image();
-            img.decoding = 'async';
-            img.onload = () => resolve(img);
-            img.onerror = () => resolve(img); // keep index alignment if one 404s
-            img.src = src;
-          }),
-      ),
-    );
-  }
-
-  /** Draw an image to cover the canvas (object-fit: cover). */
-  private drawCover(
-    ctx: CanvasRenderingContext2D,
-    img: HTMLImageElement,
-    w: number,
-    h: number,
-  ): void {
-    if (!img.naturalWidth) return;
-    const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
-    const dw = img.naturalWidth * scale;
-    const dh = img.naturalHeight * scale;
-    ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
-  }
-
-  // ── Synthetic placeholder frames (on-brand, swap out once recordings land) ──
-
-  private drawSynthetic(ctx: CanvasRenderingContext2D, w: number, h: number, p: number): void {
-    const u = h / 100; // layout unit
-    const accent = this.accent();
-
-    // Backdrop
-    const bg = ctx.createRadialGradient(w / 2, h * 0.12, 0, w / 2, h * 0.12, h);
-    bg.addColorStop(0, '#221645');
-    bg.addColorStop(0.55, '#140d22');
-    bg.addColorStop(1, '#0c0717');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, w, h);
-
-    // Device
-    const ph = h * 0.72;
-    const pw = (ph * 9) / 19;
-    const px = (w - pw) / 2;
-    const py = (h - ph) / 2;
-    const pad = pw * 0.045;
-    const sx = px + pad;
-    const sy = py + pad;
-    const sw = pw - 2 * pad;
-    const sh = ph - 2 * pad;
-
-    ctx.fillStyle = '#05030c';
-    this.path(ctx, px, py, pw, ph, pw * 0.12);
-    ctx.fill();
-
-    ctx.save();
-    this.path(ctx, sx, sy, sw, sh, pw * 0.09);
-    ctx.fillStyle = '#171029';
-    ctx.fill();
-    ctx.clip();
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(245,242,251,0.92)';
-    ctx.font = `700 ${5 * u}px "Space Grotesk", system-ui, sans-serif`;
-    ctx.fillText('Salut', sx + sw / 2, sy + 9 * u);
-
-    if (this.motion() === 'bar') this.drawBar(ctx, sx, sy, sw, sh, u, p);
-    else if (this.motion() === 'spin') this.drawSpin(ctx, sx, sy, sw, sh, p);
-    else this.drawFly(ctx, sx, sy, sw, sh, u, p, accent);
-
-    ctx.restore();
-
-    if (this.label()) {
-      ctx.textAlign = 'center';
-      ctx.fillStyle = 'rgba(245,242,251,0.5)';
-      ctx.font = `600 ${3.4 * u}px system-ui, sans-serif`;
-      ctx.fillText(this.label(), w / 2, py + ph + 7 * u);
-    }
-
-    // Scroll progress hint
-    ctx.fillStyle = accent;
-    ctx.fillRect(w / 2 - 18 * u, h - 6 * u, 36 * u * p, 0.7 * u);
-  }
-
-  /** BAC act — an animated dial: the needle sweeps, the arc climbs blue→red,
-   *  the promille glows and counts up, drinks pop in, and the status escalates. */
-  private drawBar(
-    ctx: CanvasRenderingContext2D,
-    sx: number,
-    sy: number,
-    sw: number,
-    sh: number,
-    u: number,
-    p: number,
-  ): void {
-    const level = Math.min(1, Math.pow(p, 0.8)); // climbs fast, then eases
-    const promille = level * 1.4;
-    const cx = sx + sw / 2;
-    const cy = sy + sh * 0.43;
-    const R = Math.min(sw * 0.36, sh * 0.2);
-    const lw = R * 0.2;
-    const a0 = Math.PI * 0.75;
-    const sweep = Math.PI * 1.5;
-    const col = this.ramp(level);
-
-    // Warm the room as the level rises
-    ctx.fillStyle = `rgba(235,47,75,${(0.06 * level).toFixed(3)})`;
-    ctx.fillRect(sx, sy, sw, sh);
-
-    // Pulsing glow behind the dial
-    const pulse = 0.5 + 0.5 * Math.sin(p * Math.PI * 6);
-    ctx.save();
-    ctx.globalAlpha = 0.08 + 0.14 * level;
-    ctx.fillStyle = col;
-    ctx.beginPath();
-    ctx.arc(cx, cy, R * (1 + 0.08 * pulse), 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // Segmented arc: faint track + multi-colour value sweep
-    ctx.lineWidth = lw;
-    ctx.lineCap = 'butt';
-    const segs = 60;
-    for (let s = 0; s < segs; s++) {
-      const t0 = s / segs;
-      const t1 = (s + 1) / segs;
-      ctx.beginPath();
-      ctx.arc(cx, cy, R, a0 + sweep * t0, a0 + sweep * t1 + 0.006);
-      ctx.strokeStyle = t1 <= level ? this.ramp(t1) : 'rgba(255,255,255,0.07)';
-      ctx.stroke();
-    }
-
-    // Needle + hub
-    const ang = a0 + sweep * level;
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(ang);
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.moveTo(0, -lw * 0.2);
-    ctx.lineTo(R * 0.94, 0);
-    ctx.lineTo(0, lw * 0.2);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(cx, cy, lw * 0.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = col;
-    ctx.beginPath();
-    ctx.arc(cx, cy, lw * 0.28, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Promille readout (glow intensifies with level)
-    ctx.textAlign = 'center';
-    ctx.save();
-    ctx.shadowColor = col;
-    ctx.shadowBlur = 10 + 26 * level;
-    ctx.fillStyle = '#fff';
-    ctx.font = `700 ${12 * u}px "Space Grotesk", system-ui, sans-serif`;
-    ctx.fillText(promille.toFixed(2), cx, cy + R * 0.46);
-    ctx.restore();
-    ctx.fillStyle = 'rgba(245,242,251,0.55)';
-    ctx.font = `700 ${2.7 * u}px "Space Grotesk", system-ui, sans-serif`;
-    ctx.fillText('‰  P R O M I L L E', cx, cy + R * 0.46 + 4.2 * u);
-
-    // Drinks popping in as the night goes on
-    const icons = ['🍺', '🍸', '🥃', '🍷'];
-    const thr = [0.1, 0.36, 0.6, 0.84];
-    const spread = sw * 0.6;
-    const x0 = cx - spread / 2;
-    const iy = sy + sh * 0.8;
-    for (let i = 0; i < icons.length; i++) {
-      const raw = (p - thr[i]) / 0.09;
-      if (raw <= 0) continue;
-      const pop = this.easeOutBack(Math.min(1, raw));
-      const size = 5.4 * u * pop;
-      ctx.save();
-      ctx.globalAlpha = Math.min(1, raw * 1.5);
-      ctx.font = `${size}px serif`;
-      ctx.fillText(icons[i], x0 + spread * (i / (icons.length - 1)), iy + size * 0.35);
-      ctx.restore();
-    }
-
-    // Escalating status
-    let status = 'Tracking your night…';
-    let warn = false;
-    if (level > 0.82) {
-      status = '⚠  Over the limit · sober ~02:40';
-      warn = true;
-    } else if (level > 0.55) {
-      status = 'Pace yourself';
-    } else if (level > 0.22) {
-      status = 'Feeling it';
-    }
-    ctx.fillStyle = warn ? '#ff8a7a' : 'rgba(245,242,251,0.6)';
-    ctx.font = `600 ${3 * u}px system-ui, sans-serif`;
-    ctx.fillText(status, cx, sy + sh * 0.92);
-  }
-
-  /** Games act — a lucky wheel spinning ~2 turns across the scroll. */
-  private drawSpin(
-    ctx: CanvasRenderingContext2D,
-    sx: number,
-    sy: number,
-    sw: number,
-    sh: number,
-    p: number,
-  ): void {
-    const cx = sx + sw / 2;
-    const cy = sy + sh * 0.52;
-    const rad = sw * 0.34;
-    const cols = ['#ff6f5e', '#7c5cff', '#ffd23f', '#7be0ad', '#ff2e63', '#56ccf2'];
-    const seg = cols.length;
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(p * Math.PI * 4);
-    for (let s = 0; s < seg; s++) {
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, rad, (s / seg) * 2 * Math.PI, ((s + 1) / seg) * 2 * Math.PI);
-      ctx.closePath();
-      ctx.fillStyle = cols[s];
-      ctx.fill();
-    }
-    ctx.restore();
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - rad - sw * 0.03);
-    ctx.lineTo(cx - sw * 0.03, cy - rad + sw * 0.02);
-    ctx.lineTo(cx + sw * 0.03, cy - rad + sw * 0.02);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  /** Home-screen act — the app icon flies onto a home-screen grid. */
-  private drawFly(
-    ctx: CanvasRenderingContext2D,
-    sx: number,
-    sy: number,
-    sw: number,
-    sh: number,
-    u: number,
-    p: number,
-    accent: string,
-  ): void {
-    const cols = 3;
-    const gap = sw * 0.08;
-    const cell = (sw - gap * (cols + 1)) / cols;
-    const gridTop = sy + sh * 0.2;
-    const rowH = cell + gap * 0.7;
-
-    ctx.globalAlpha = 0.16;
-    ctx.fillStyle = '#fff';
-    for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < cols; c++) {
-        this.path(ctx, sx + gap + c * (cell + gap), gridTop + r * rowH, cell, cell, cell * 0.26);
-        ctx.fill();
-      }
-    }
-    ctx.globalAlpha = 1;
-
-    const ease = p * p * (3 - 2 * p); // smoothstep
-    const startX = sx + sw / 2 - cell / 2;
-    const startY = sy + sh / 2 - cell / 2;
-    const targetX = sx + gap; // row 0, col 0
-    const targetY = gridTop;
-    const x = startX + (targetX - startX) * ease;
-    const y = startY + (targetY - startY) * ease;
-    const scale = 1.6 - 0.6 * ease;
-    const size = cell * scale;
-
-    const g = ctx.createLinearGradient(x, y, x + size, y + size);
-    g.addColorStop(0, accent);
-    g.addColorStop(1, '#7c5cff');
-    ctx.fillStyle = g;
-    this.path(ctx, x + (cell - size) / 2, y + (cell - size) / 2, size, size, size * 0.26);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.font = `700 ${size * 0.4}px "Space Grotesk", system-ui, sans-serif`;
-    ctx.fillText('S', x + cell / 2, y + cell / 2 + size * 0.14);
-
-    if (ease > 0.7) {
-      ctx.globalAlpha = (ease - 0.7) / 0.3;
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.font = `600 ${2.6 * u}px system-ui, sans-serif`;
-      ctx.fillText('Salut', targetX + cell / 2, targetY + cell + 3.4 * u);
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  /** Rounded-rect path (manual; avoids CanvasRenderingContext2D.roundRect typing gaps). */
-  private path(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    r: number,
-  ): void {
-    const rr = Math.min(r, w / 2, h / 2);
-    ctx.beginPath();
-    ctx.moveTo(x + rr, y);
-    ctx.arcTo(x + w, y, x + w, y + h, rr);
-    ctx.arcTo(x + w, y + h, x, y + h, rr);
-    ctx.arcTo(x, y + h, x, y, rr);
-    ctx.arcTo(x, y, x + w, y, rr);
-    ctx.closePath();
-  }
-
-  /** Blue → green → amber → red ramp for the BAC dial. */
-  private ramp(t: number): string {
-    const stops: [number, number[]][] = [
-      [0.0, [47, 128, 237]],
-      [0.35, [111, 207, 151]],
-      [0.6, [255, 210, 63]],
-      [0.8, [255, 122, 47]],
-      [1.0, [235, 47, 75]],
-    ];
-    const x = Math.max(0, Math.min(1, t));
-    for (let i = 1; i < stops.length; i++) {
-      if (x <= stops[i][0]) {
-        const [t0, c0] = stops[i - 1];
-        const [t1, c1] = stops[i];
-        const f = (x - t0) / (t1 - t0);
-        return `rgb(${Math.round(c0[0] + (c1[0] - c0[0]) * f)},${Math.round(
-          c0[1] + (c1[1] - c0[1]) * f,
-        )},${Math.round(c0[2] + (c1[2] - c0[2]) * f)})`;
-      }
-    }
-    return 'rgb(235,47,75)';
-  }
-
-  /** Overshooting ease for the drink "pop-in". */
-  private easeOutBack(t: number): number {
-    const c1 = 1.70158;
-    const c3 = c1 + 1;
-    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
   }
 }

@@ -39,6 +39,11 @@ img, svg, video { max-width: 100%; display: block; }
   border-radius: var(--r-sm);
 }
 
+::selection { background: var(--primary); color: var(--on-primary); }
+
+// Anchor targets clear the floating header.
+[id] { scroll-margin-top: 96px; }
+
 .container {
   width: 100%;
   max-width: var(--container);
@@ -46,6 +51,7 @@ img, svg, video { max-width: 100%; display: block; }
   padding-inline: var(--s-5);
 }
 .container--narrow { max-width: var(--container-narrow); }
+.container--wide { max-width: var(--container-wide); }
 
 // --- Tactile button -------------------------------------------------
 .btn {
@@ -81,6 +87,14 @@ img, svg, video { max-width: 100%; display: block; }
 }
 .btn--primary:hover { --_bg: var(--primary-hover); }
 .btn--primary:active { --_bg: var(--primary-press); }
+
+.btn--ghost {
+  --_bg: transparent;
+  border-color: var(--border-strong);
+  backdrop-filter: blur(8px);
+  box-shadow: none;
+}
+.btn--ghost:hover { --_bg: color-mix(in srgb, var(--surface-2) 60%, transparent); }
 
 .btn--lg { padding: var(--s-5) var(--s-7); font-size: var(--fs-500); }
 .btn--block { width: 100%; }

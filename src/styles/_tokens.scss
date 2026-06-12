@@ -90,6 +90,7 @@
   --fs-600: clamp(1.6rem, 1.2rem + 2vw, 2.25rem);
   --fs-700: clamp(2.2rem, 1.4rem + 4vw, 3.5rem);
   --fs-800: clamp(2.8rem, 1.6rem + 6vw, 5rem);
+  --fs-900: clamp(3rem, 1.5rem + 7vw, 6.9rem); // hero display — one size up
 
   --lh-tight: 1.05;
   --lh-snug: 1.2;
@@ -106,6 +107,7 @@
   // --- Layout -----------------------------------------------------
   --container: 1140px;
   --container-narrow: 720px;
+  --container-wide: 1320px; // hero / display moments only
 }
 
 // Optional light theme (kept for the future; landing defaults to dark).
