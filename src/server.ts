@@ -103,6 +103,16 @@ app.use((_req, res, next) => {
   next();
 });
 
+// Liveness/readiness probe for Coolify (and uptime monitors). It's a plain
+// Express route, so it never reaches Angular's SSRF host check: a probe that
+// hits the container by IP or service name (i.e. a Host that isn't in
+// allowedHosts) still gets 200 instead of the 400 that would mark the container
+// unhealthy and stop Traefik from routing to it. Point Coolify's health-check
+// path at /healthz.
+app.get('/healthz', (_req, res) => {
+  res.status(200).type('text/plain').send('ok');
+});
+
 app.use(express.json({ limit: '8kb' }));
 
 async function callApi(
