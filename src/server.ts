@@ -8,27 +8,56 @@ import express from 'express';
 import { join } from 'node:path';
 import { umamiOrigin } from './app/core/analytics/analytics.config';
 import { EVENTS_API } from './app/core/events/events.config';
+import { SITE_URL } from './app/core/site.config';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
-// The waitlist now lives in the salut-api service (NestJS + Postgres). The
-// browser still talks to this same-origin Express endpoint (no CORS); we
-// forward server-to-server to the API. Staging api.salut.bown.at, launch
-// api.salut.com — override per environment with WAITLIST_API_URL.
+// The waitlist lives in the Salut backend (api.salut.rocks). The browser talks
+// to this same-origin Express endpoint (no CORS); we forward server-to-server
+// to the API. Override per environment with WAITLIST_API_URL.
 const waitlistApiUrl = (
-  process.env['WAITLIST_API_URL'] || 'https://api.salut.bown.at'
+  process.env['WAITLIST_API_URL'] || 'https://api.salut.rocks'
 ).replace(/\/$/, '');
-// The Salut app backend (Go). Early-access pre-registration is proxied here
+// The Salut app backend. Early-access pre-registration is proxied here
 // server-to-server so the browser only ever talks to this same origin (DSGVO:
 // no cross-origin request fired from the page). Override with SALUT_API_URL.
 const salutApiUrl = (
-  process.env['SALUT_API_URL'] || 'https://salut-api.bressler.at'
+  process.env['SALUT_API_URL'] || 'https://api.salut.rocks'
 ).replace(/\/$/, '');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UPSTREAM_TIMEOUT_MS = 8000;
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+
+// SSR runs behind a TLS-terminating reverse proxy (the X-Forwarded-Server header
+// is an Apache/Traefik signature). Angular's SSR engine (v20+) hardens against
+// SSRF by (a) rejecting any Host / X-Forwarded-Host that isn't allow-listed and
+// (b) refusing to trust X-Forwarded-* headers it wasn't told about — in both
+// cases silently falling back to client-side rendering (a hard 400 in a future
+// major). So we must allow our own domains AND trust the forwarding headers the
+// proxy actually sets. Note: `trustProxyHeaders: true` only covers the five
+// standard X-Forwarded-* headers and would still de-opt on the non-standard
+// X-Forwarded-Server, so we pass an explicit list. This is safe against host
+// spoofing because allowedHosts still gates the (forwarded) Host value.
+// Override the domains per environment with NG_ALLOWED_HOSTS (comma-separated).
+// `localhost` keeps direct hits working (health checks, running the prod build
+// locally on :4000) — without it those now hard-400 since allowedHosts is set.
+const allowedHosts = (process.env['NG_ALLOWED_HOSTS'] || 'salut.rocks,www.salut.rocks,localhost')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean);
+
+const angularApp = new AngularNodeAppEngine({
+  allowedHosts,
+  trustProxyHeaders: [
+    'x-forwarded-host',
+    'x-forwarded-proto',
+    'x-forwarded-port',
+    'x-forwarded-for',
+    'x-forwarded-prefix',
+    'x-forwarded-server',
+  ],
+});
 
 // Security + privacy headers on every response. The CSP is self-only apart
 // from the self-hosted Umami origin (no third-party trackers/CDNs — see DSGVO
@@ -183,6 +212,66 @@ app.post('/api/preregister', async (req, res) => {
   } catch {
     res.status(502).json({ ok: false, error: 'upstream_unreachable' });
   }
+});
+
+// robots.txt + sitemap.xml are generated from SITE_URL so the canonical origin
+// lives in exactly one place (DRY with the in-app canonical/OG/hreflang tags).
+// A static .txt/.xml can't read an env var, so we serve them here — registered
+// before express.static and the Angular catch-all so these win.
+app.get('/robots.txt', (_req, res) => {
+  res
+    .type('text/plain')
+    .send(
+      [
+        'User-agent: *',
+        'Allow: /',
+        '',
+        '# Legal pages are noindex via meta tags (crawlers must still fetch',
+        '# them) — intentionally not disallowed here.',
+        '',
+        `Sitemap: ${SITE_URL}/sitemap.xml`,
+        '',
+      ].join('\n'),
+    );
+});
+
+// Public, indexable routes with their de/en hreflang pairs (x-default → en).
+const SITEMAP_ENTRIES: ReadonlyArray<{
+  path: string;
+  de: string;
+  en: string;
+  lastmod: string;
+  priority: string;
+}> = [
+  { path: '/', de: '/', en: '/en', lastmod: '2026-06-06', priority: '1.0' },
+  { path: '/en', de: '/', en: '/en', lastmod: '2026-06-06', priority: '0.9' },
+  { path: '/early-access', de: '/early-access', en: '/en/early-access', lastmod: '2026-06-08', priority: '0.8' },
+  { path: '/en/early-access', de: '/early-access', en: '/en/early-access', lastmod: '2026-06-08', priority: '0.8' },
+];
+
+app.get('/sitemap.xml', (_req, res) => {
+  const urls = SITEMAP_ENTRIES.map((e) =>
+    [
+      '  <url>',
+      `    <loc>${SITE_URL}${e.path}</loc>`,
+      `    <xhtml:link rel="alternate" hreflang="de" href="${SITE_URL}${e.de}"/>`,
+      `    <xhtml:link rel="alternate" hreflang="en" href="${SITE_URL}${e.en}"/>`,
+      `    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE_URL}${e.en}"/>`,
+      `    <lastmod>${e.lastmod}</lastmod>`,
+      '    <changefreq>weekly</changefreq>',
+      `    <priority>${e.priority}</priority>`,
+      '  </url>',
+    ].join('\n'),
+  ).join('\n');
+  res
+    .type('application/xml')
+    .send(
+      `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n` +
+        `        xmlns:xhtml="http://www.w3.org/1999/xhtml">\n` +
+        `${urls}\n` +
+        `</urlset>\n`,
+    );
 });
 
 /**

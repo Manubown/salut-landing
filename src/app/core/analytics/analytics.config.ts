@@ -7,15 +7,15 @@
  * it is imported by both the browser AnalyticsService and the SSR server
  * (server.ts) so the Content-Security-Policy and the script stay in sync.
  *
- * Fill both values once Umami is deployed (Coolify → Umami service) and the
+ * Fill both values once Umami is deployed (e.g. at umami.salut.rocks) and the
  * "salut" website is created in its dashboard. While either is empty the
  * tracker is a no-op and the CSP stays self-only — safe to ship as-is.
- *   - host:      Umami instance origin, no trailing slash (e.g. 'https://umami.bown.at')
+ *   - host:      Umami instance origin, no trailing slash (e.g. 'https://umami.salut.rocks')
  *   - websiteId: the UUID Umami assigns to the site
  */
 export const UMAMI: { host: string; websiteId: string } = {
-  host: 'https://umami.bown.at',
-  websiteId: '73af99a9-8ad6-4bb1-8cb7-a465bd45cd33',
+  host: '',
+  websiteId: '',
 };
 
 /** Umami origin with any trailing slash stripped, or '' when unconfigured. */

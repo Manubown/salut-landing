@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { SeoService, SITE_URL } from '../../core/seo/seo.service';
 import { DEFAULT_LOCALE, Locale } from '../../core/i18n/locale';
 import { PreregisterService } from '../../core/api/preregister.service';
+import { APP_URL } from '../../core/app-links';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -181,7 +182,7 @@ export class Register implements OnInit {
   protected readonly otherPath = eaPath(this.otherLocale);
   protected readonly homeHref = this.locale === 'de' ? '/' : '/en';
   protected readonly privacyHref = '/datenschutz';
-  protected readonly appUrl = 'https://salut-web.bressler.at';
+  protected readonly appUrl = APP_URL;
 
   protected readonly status = signal<Status>('idle');
   protected readonly showInvalid = signal(false);

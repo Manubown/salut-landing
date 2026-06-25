@@ -21,14 +21,11 @@ export interface SeoData {
   alternates?: HreflangAlternate[];
 }
 
-/**
- * The canonical public origin. Override at build via SITE_URL env if it ever
- * moves (e.g. to salut.at) — this is the single source of truth.
- *   - now:    https://salut.bown.at
- */
-export const SITE_URL = (
-  (typeof process !== 'undefined' && process.env?.['SITE_URL']) || 'https://salut.bown.at'
-).replace(/\/$/, '');
+// The canonical public origin now lives in core/site.config so the Express
+// server can share it. Imported here and re-exported for the many
+// `import { SITE_URL } from '.../seo.service'` call sites.
+import { SITE_URL } from '../site.config';
+export { SITE_URL };
 
 /**
  * Centralises page-level SEO: <title>, meta description, Open Graph / Twitter

@@ -18,6 +18,12 @@ services:
       NODE_ENV: production
       PORT: "4000"
       HOST: 0.0.0.0
-      # Where the waitlist API lives. Staging api.salut.bown.at, launch
-      # api.salut.com. Reached server-to-server (browser stays same-origin).
-      WAITLIST_API_URL: https://api.salut.bown.at
+      # Canonical public origin — drives canonical/OG/hreflang + sitemap/robots.
+      SITE_URL: https://salut.rocks
+      # Hosts the SSR engine accepts (Angular v21 SSRF guard). Coolify/Traefik
+      # forwards the real Host; anything not listed falls back to CSR / 400.
+      NG_ALLOWED_HOSTS: salut.rocks,www.salut.rocks
+      # Backend the landing proxies to server-to-server (browser stays
+      # same-origin). Waitlist + pre-register + events all live here.
+      WAITLIST_API_URL: https://api.salut.rocks
+      SALUT_API_URL: https://api.salut.rocks
