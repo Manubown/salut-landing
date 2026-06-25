@@ -8,7 +8,7 @@ import {
   input,
   viewChild,
 } from '@angular/core';
-import { HeroNote, UiPainter, paintNotification } from '../../three/ui-painter';
+import { HeroNote, UiMode, UiPainter, paintNotification } from '../../three/ui-painter';
 import { makeScreenMaterial } from '../../three/screen-shader';
 import {
   PHONE,
@@ -20,22 +20,28 @@ import {
   remap,
   smooth,
 } from '../../three/phone-rig';
+import { IntroBus } from '../../core/intro/intro.bus';
 
 /**
- * The hero "reveal" sequence (à la meetcleo.com's clouds-to-phone opener).
+ * The hero — a self-playing WebGL stage (no scroll-jacking).
  *
- * A pinned, scroll-scrubbed WebGL stage in three beats:
- *   A — a party light show fills the whole viewport (it's actually the
- *       phone's screen with the camera right up against it);
- *   B — the camera pulls back: the rave was on a 3D phone all along,
- *       floating glass shards drift in around it;
- *   C — the screen irises into Salut and the first round gets logged,
- *       the BAC dial climbing live.
+ * Once the intro curtain lifts it auto-plays one sequence, then loops a
+ * swipeable app showcase:
+ *   reveal — a party light show fills the screen, then the camera pulls back to
+ *            show it was a 3D phone all along (glass shards drift in);
+ *   cycle  — the app opens and the screen cycles through install → bac →
+ *            drinks. It auto-advances on a cooldown, and the user can flick the
+ *            glass cards horizontally to advance/loop (a continuous carousel,
+ *            `scenePos`). Each scene cut is masked by a quick screen dim.
  *
- * Caption layers are projected from the parent (`slot="phase-a|b|c"`), so
- * copy/SEO stay in the page component. Progressive enhancement: without JS
- * (or with reduced motion / no WebGL) the captions simply stack as normal
- * static sections — `is-anim` switches on the choreography.
+ * Vertical drags are never captured (`touch-action: pan-y`), so the user can
+ * scroll past to the cocktails section at any moment — the stage scrolls away
+ * and the render loop pauses off-screen.
+ *
+ * Caption layers are projected from the parent (`slot="reveal|install|bac|
+ * drinks"`); the scene cards ride the carousel. Progressive enhancement:
+ * without JS / reduced motion / no WebGL the captions stack as normal static
+ * sections — `is-anim` switches on the choreography.
  */
 @Component({
   selector: 'salut-hero-stage',
@@ -45,9 +51,16 @@ import {
     <div class="hstage" #wrap>
       <div class="hstage__stage" #stage>
         <canvas class="hstage__gl" #canvas aria-hidden="true"></canvas>
-        <div class="hstage__cap hstage__cap--a" #capA><ng-content select="[slot=phase-a]" /></div>
-        <div class="hstage__cap hstage__cap--b" #capB><ng-content select="[slot=phase-b]" /></div>
-        <div class="hstage__cap hstage__cap--c" #capC><ng-content select="[slot=phase-c]" /></div>
+        <div class="hstage__cap hstage__cap--reveal" #capReveal>
+          <ng-content select="[slot=reveal]" />
+        </div>
+        <div class="hstage__cap hstage__cap--scene" #capInstall>
+          <ng-content select="[slot=install]" />
+        </div>
+        <div class="hstage__cap hstage__cap--scene" #capBac><ng-content select="[slot=bac]" /></div>
+        <div class="hstage__cap hstage__cap--scene" #capDrinks>
+          <ng-content select="[slot=drinks]" />
+        </div>
       </div>
     </div>
   `,
@@ -60,11 +73,13 @@ export class HeroStage {
   private readonly wrap = viewChild.required<ElementRef<HTMLElement>>('wrap');
   private readonly stage = viewChild.required<ElementRef<HTMLElement>>('stage');
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
-  private readonly capA = viewChild.required<ElementRef<HTMLElement>>('capA');
-  private readonly capB = viewChild.required<ElementRef<HTMLElement>>('capB');
-  private readonly capC = viewChild.required<ElementRef<HTMLElement>>('capC');
+  private readonly capReveal = viewChild.required<ElementRef<HTMLElement>>('capReveal');
+  private readonly capInstall = viewChild.required<ElementRef<HTMLElement>>('capInstall');
+  private readonly capBac = viewChild.required<ElementRef<HTMLElement>>('capBac');
+  private readonly capDrinks = viewChild.required<ElementRef<HTMLElement>>('capDrinks');
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly introBus = inject(IntroBus);
 
   constructor() {
     afterNextRender(() => void this.init());
@@ -73,13 +88,13 @@ export class HeroStage {
   private async init(): Promise<void> {
     const hostEl = this.host.nativeElement as HTMLElement;
     const canvas = this.canvas().nativeElement;
+    const stageEl = this.stage().nativeElement;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const coarse = window.matchMedia('(pointer: coarse)').matches;
 
-    // Switch to the pinned overlay layout BEFORE the heavy async work. On a
-    // cold cache the three.js/GSAP chunks can take longer than the intro
-    // overlay — without this the stacked no-JS fallback flashed through and
-    // the page reflowed mid-view once init finished. Reverted on failure.
+    // Switch to the overlay layout BEFORE the heavy async work. On a cold cache
+    // the three.js chunk can take longer than the intro overlay — without this
+    // the stacked no-JS fallback flashed through. Reverted on failure.
     if (!reduced) hostEl.classList.add('is-anim');
     const fail = () => {
       hostEl.classList.remove('is-anim');
@@ -116,7 +131,7 @@ export class HeroStage {
 
     const painter = new UiPainter();
     const appTex = new THREE.CanvasTexture(painter.canvas);
-    painter.draw('track', 0, 0);
+    painter.draw('install', 0, 0);
     appTex.needsUpdate = true;
     const { material: screenMat, uniforms: su } = makeScreenMaterial(THREE, appTex);
     const rig = await buildPhone(THREE, screenMat);
@@ -140,14 +155,12 @@ export class HeroStage {
     // phone body, so the cards visibly spill over its edges
     interface NoteMesh {
       mesh: import('three').Mesh;
-      from: number; // progress where it pops in
-      until: number; // progress where it fades (>1 = stays)
     }
     const noteMeshes: NoteMesh[] = [];
     const noteSlots = [
-      { x: 0.27, y: 0.6, z: 0.16, rz: -0.03, from: 0.34, until: 0.55 },
-      { x: -0.26, y: 0.08, z: 0.2, rz: 0.025, from: 0.78, until: 2 },
-      { x: 0.24, y: -0.44, z: 0.24, rz: -0.02, from: 0.86, until: 2 },
+      { x: 0.27, y: 0.6, z: 0.16, rz: -0.03 },
+      { x: -0.26, y: 0.08, z: 0.2, rz: 0.025 },
+      { x: 0.24, y: -0.44, z: 0.24, rz: -0.02 },
     ];
     this.notes()
       .slice(0, 3)
@@ -166,7 +179,7 @@ export class HeroStage {
         mesh.renderOrder = 3;
         mesh.visible = false;
         rig.group.add(mesh);
-        noteMeshes.push({ mesh, from: slot.from, until: slot.until });
+        noteMeshes.push({ mesh });
       });
 
     // floating glass shards (appear as the camera pulls back)
@@ -201,8 +214,8 @@ export class HeroStage {
     let zNear = 1;
     let zFar = 5;
     let portrait = false;
+    let spacing = 1; // px a scene card travels per carousel step (set in layout)
     const layout = () => {
-      const stageEl = this.stage().nativeElement;
       const w = stageEl.clientWidth || 1;
       const h = stageEl.clientHeight || 1;
       renderer.setSize(w, h, false);
@@ -215,15 +228,16 @@ export class HeroStage {
       // far enough to frame the whole phone with breathing room
       zFar = Math.max((PHONE.H * 1.4) / 2 / tanV, (PHONE.W * 2.4) / 2 / tanH);
       portrait = camera.aspect < 0.9;
+      spacing = w * 0.62;
     };
     layout();
     const ro = new ResizeObserver(() => {
       layout();
       if (staticMode) renderStatic();
     });
-    ro.observe(this.stage().nativeElement);
+    ro.observe(stageEl);
 
-    // ── pointer ─────────────────────────────────────────────────────────
+    // ── pointer (device tilt) ───────────────────────────────────────────
     let tx = 0;
     let ty = 0;
     const onPointer = (e: PointerEvent) => {
@@ -231,32 +245,146 @@ export class HeroStage {
       ty = -((e.clientY / window.innerHeight) * 2 - 1);
     };
 
-    // ── choreography ────────────────────────────────────────────────────
-    const capA = this.capA().nativeElement;
-    const capB = this.capB().nativeElement;
-    const capC = this.capC().nativeElement;
-    const setCap = (el: HTMLElement, o: number, y: number) => {
+    // ── captions ────────────────────────────────────────────────────────
+    const capReveal = this.capReveal().nativeElement;
+    const sceneCaps = [
+      this.capInstall().nativeElement,
+      this.capBac().nativeElement,
+      this.capDrinks().nativeElement,
+    ];
+    // The reveal headline fades up as the app opens.
+    const setReveal = (o: number, y: number) => {
+      capReveal.style.opacity = o.toFixed(3);
+      capReveal.style.transform = `translateY(${y.toFixed(1)}px)`;
+      capReveal.style.visibility = o <= 0.001 ? 'hidden' : 'visible';
+      capReveal.style.pointerEvents = o > 0.5 ? 'auto' : 'none';
+    };
+    // Scene cards ride the carousel horizontally.
+    const setCard = (el: HTMLElement, x: number, o: number) => {
       el.style.opacity = o.toFixed(3);
-      el.style.transform = `translateY(${y.toFixed(1)}px)`;
+      el.style.transform = `translateX(${x.toFixed(1)}px)`;
       el.style.visibility = o <= 0.001 ? 'hidden' : 'visible';
-      // Projected content can't be re-enabled from this component's scoped
-      // CSS (encapsulation attrs differ), so toggle clickability here.
-      el.style.pointerEvents = o > 0.5 ? 'auto' : 'none';
+      el.style.pointerEvents = o > 0.6 && Math.abs(x) < 40 ? 'auto' : 'none';
     };
 
-    let progress = 0; // raw from ScrollTrigger
-    let pr = 0; // smoothed
+    // ── auto sequence + swipeable scene carousel ────────────────────────
+    const SCENES: UiMode[] = ['install', 'bac', 'drinks'];
+    const N = SCENES.length;
+    const modN = (n: number) => ((n % N) + N) % N;
+    const HOLD = 0.35; // seconds on the rave before the dolly-out begins
+    const REVEAL_RUN = 2.1; // seconds the pull-back takes
+    const OPEN = 0.6; // seconds the screen takes to boot into the app
+    const SCENE_DUR = 4.2; // seconds each app scene holds before auto-advancing
+    const REVEAL_END = HOLD + REVEAL_RUN;
+
     let time = 0;
     let last = performance.now();
     const px = { x: 0, y: 0 }; // lerped pointer
+    let autoEnabled = false;
+    let autoT0 = 0;
+    const startAuto = () => {
+      if (!autoEnabled) {
+        autoEnabled = true;
+        autoT0 = time;
+      }
+    };
+
+    // carousel state
+    let scenePos = 0; // continuous index; integers = settled
+    let targetPos = 0; // spring target
+    let autoTimer = 0; // cooldown accrued while settled on a scene
+    let lastIdx = -1;
+    let sceneBuildT = 0; // seconds the current scene has been on screen (builds it)
+    let dragging = false;
+
+    // horizontal flick (vertical stays page-scroll via touch-action: pan-y)
+    let down = false;
+    let committed = false;
+    let sawVertical = false;
+    let sx = 0;
+    let sy = 0;
+    let dragBase = 0;
+    let ddx = 0;
+    let lastPX = 0;
+    let lastPT = 0;
+    let vel = 0;
+    const SWIPE_MIN = 8;
+    const cyclingNow = () => autoEnabled && time - autoT0 >= REVEAL_END;
+    const onSwipeDown = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (!cyclingNow()) return;
+      down = true;
+      committed = false;
+      sawVertical = false;
+      sx = e.clientX;
+      sy = e.clientY;
+      lastPX = e.clientX;
+      lastPT = performance.now();
+      vel = 0;
+      dragBase = Math.round(scenePos);
+    };
+    const onSwipeMove = (e: PointerEvent) => {
+      if (!down || sawVertical) return;
+      const dx = e.clientX - sx;
+      const dy = e.clientY - sy;
+      if (!committed) {
+        if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > SWIPE_MIN) {
+          sawVertical = true; // it's a scroll — let the page have it
+          return;
+        }
+        if (Math.abs(dx) > SWIPE_MIN) {
+          committed = true;
+          dragging = true;
+          try {
+            stageEl.setPointerCapture(e.pointerId);
+          } catch {
+            /* capture is best-effort */
+          }
+        } else {
+          return;
+        }
+      }
+      ddx = e.clientX - sx;
+      const now = performance.now();
+      if (now > lastPT) vel = (e.clientX - lastPX) / (now - lastPT);
+      lastPX = e.clientX;
+      lastPT = now;
+      scenePos = dragBase - ddx / spacing;
+      autoTimer = 0;
+    };
+    const endSwipe = (e: PointerEvent) => {
+      if (!down) return;
+      down = false;
+      if (committed) {
+        try {
+          stageEl.releasePointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
+        dragging = false;
+        const moved = ddx / spacing; // <0 = swiped left = next
+        const flick = Math.abs(vel) > 0.45; // px/ms
+        let step = 0;
+        if (moved < -0.22 || (flick && vel < 0)) step = 1;
+        else if (moved > 0.22 || (flick && vel > 0)) step = -1;
+        targetPos = dragBase + step;
+        autoTimer = 0; // manual advance resets the cooldown
+      }
+      committed = false;
+    };
+    const onSwipeCancel = () => {
+      down = false;
+      committed = false;
+      dragging = false;
+    };
 
     const apply = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       time += dt;
-      pr += (progress - pr) * Math.min(1, dt * 7);
       px.x += (tx - px.x) * Math.min(1, dt * 4);
       px.y += (ty - px.y) * Math.min(1, dt * 4);
+      const at = autoEnabled ? Math.max(0, time - autoT0) : 0;
 
       const beat = 0.5 + 0.5 * Math.sin(time * 3.4);
       su.uTime.value = time;
@@ -266,9 +394,9 @@ export class HeroStage {
       punch.intensity = 4.5 + 3 * beat;
       grape.intensity = 4 + 2.5 * (1 - beat);
 
-      // beat B — dolly out and reveal the phone; the glass reflections fade
-      // in WITH the pull-back (full-screen they'd wash the party white)
-      const zoom = easeInOutCubic(remap(pr, 0.08, 0.52));
+      // reveal — dolly out and reveal the phone; the glass reflections fade in
+      // WITH the pull-back (full-screen they'd wash the party white)
+      const zoom = easeInOutCubic(Math.min(1, Math.max(0, at - HOLD) / REVEAL_RUN));
       rig.glassUniforms.uReveal.value = smooth(remap(zoom, 0.25, 0.85));
       camera.position.z = lerp(zNear, zFar, zoom);
       const sideShift = portrait ? 0 : 0.52;
@@ -278,23 +406,50 @@ export class HeroStage {
       rig.group.rotation.x = zoom * 0.05 + px.y * -0.09 * zoom;
       camera.lookAt(rig.group.position.x * 0.85, rig.group.position.y * 0.6, 0);
 
-      // beat C — app opens, first round gets logged
-      const open = smooth(remap(pr, 0.56, 0.7));
+      // app opens as the reveal completes, then the scene carousel runs
+      const open = smooth(Math.min(1, Math.max(0, at - (REVEAL_END - 0.3)) / OPEN));
       su.uMix.value = open;
-      const uiP = remap(pr, 0.7, 0.97);
-      if (painter.draw('track', uiP, smooth(remap(pr, 0.58, 0.68)))) appTex.needsUpdate = true;
 
-      // notifications — a friend tracks before the app opens, then points
-      // and leaderboard pings roll in while the promille climbs
-      for (const n of noteMeshes) {
-        const pop = easeOutBack(remap(pr, n.from, n.from + 0.05));
-        const fade = 1 - smooth(remap(pr, n.until - 0.05, n.until));
-        const vis = pop > 0.001 && fade > 0.001;
+      let mode: UiMode = SCENES[0];
+      let sceneP = 0;
+      let dim = 0;
+      const cycling = at >= REVEAL_END;
+      if (cycling) {
+        if (!dragging) {
+          scenePos += (targetPos - scenePos) * Math.min(1, dt * 6);
+          if (Math.abs(scenePos - targetPos) < 0.01) {
+            scenePos = targetPos;
+            autoTimer += dt;
+            if (autoTimer >= SCENE_DUR) {
+              targetPos += 1; // auto-advance to the next scene
+              autoTimer = 0;
+            }
+          }
+        }
+        const idx = modN(Math.round(scenePos));
+        if (idx !== lastIdx) {
+          lastIdx = idx;
+          sceneBuildT = 0;
+        }
+        sceneBuildT += dt;
+        sceneP = smooth(Math.min(1, sceneBuildT / 1.4)); // the scene builds itself
+        const f = scenePos - Math.floor(scenePos);
+        dim = Math.sin(Math.PI * f); // peaks mid-transition, masking the scene cut
+        mode = SCENES[idx];
+      }
+      if (painter.draw(mode, sceneP, open, '#ff2e63', dim)) appTex.needsUpdate = true;
+
+      // notifications spill off the phone during the BAC scene
+      for (let i = 0; i < noteMeshes.length; i++) {
+        const n = noteMeshes[i];
+        const active = cycling && mode === 'bac';
+        const pop = active ? easeOutBack(Math.min(1, (sceneP - i * 0.16) / 0.18)) : 0;
+        const vis = pop > 0.01 && 1 - dim > 0.01;
         n.mesh.visible = vis;
         if (!vis) continue;
         n.mesh.scale.setScalar(Math.max(0.001, pop));
-        (n.mesh.material as import('three').MeshBasicMaterial).opacity = fade;
-        n.mesh.position.y += Math.sin(time * 1.1 + n.from * 20) * 0.0006;
+        (n.mesh.material as import('three').MeshBasicMaterial).opacity = (1 - dim) * Math.min(1, pop * 1.4);
+        n.mesh.position.y += Math.sin(time * 1.1 + i * 20) * 0.0006;
       }
 
       // shards drift in with the reveal
@@ -307,36 +462,33 @@ export class HeroStage {
         s.rotation.z += dt * 0.05;
       }
 
-      // caption layers
-      setCap(capA, 1 - smooth(remap(pr, 0.05, 0.16)), pr * -90);
-      const bIn = smooth(remap(pr, 0.3, 0.4));
-      const bOut = smooth(remap(pr, 0.55, 0.63));
-      setCap(capB, bIn * (1 - bOut), (1 - bIn) * 36 - bOut * 30);
-      const cIn = smooth(remap(pr, 0.7, 0.8));
-      setCap(capC, cIn, (1 - cIn) * 36);
+      // captions — reveal headline fades as the app opens; scene cards ride the
+      // carousel (one centred, neighbours sliding off to the sides)
+      setReveal(1 - open, open * -40);
+      const cycleIn = smooth(Math.min(1, Math.max(0, at - REVEAL_END) / 0.4));
+      for (let i = 0; i < sceneCaps.length; i++) {
+        let rel = i - scenePos;
+        rel = rel - N * Math.round(rel / N); // nearest wrapped position
+        const o = cycling ? Math.max(0, 1 - Math.abs(rel) * 1.5) * cycleIn : 0;
+        setCard(sceneCaps[i], rel * spacing, o);
+      }
 
       renderer.render(scene, camera);
     };
 
-    // ── static fallback (reduced motion / ScrollTrigger failure) ────────
+    // ── static fallback (reduced motion / WebGL failure) ────────────────
     let staticMode = false;
     const renderStatic = () => {
       time = 4.2;
       su.uTime.value = time;
       su.uMix.value = 1;
-      painter.draw('track', 0.62, 1);
+      painter.draw('bac', 0.7, 1);
       appTex.needsUpdate = true;
       camera.position.z = zFar;
       camera.lookAt(0, 0, 0);
       rig.group.rotation.set(0.04, -0.26, 0);
       rig.group.position.set(0, 0, 0);
       for (const s of shards) s.scale.setScalar(1);
-      // one friend ping for flavour in the static composition
-      const n = noteMeshes[1] ?? noteMeshes[0];
-      if (n) {
-        n.mesh.visible = true;
-        n.mesh.scale.setScalar(1);
-      }
       renderer.render(scene, camera);
     };
 
@@ -371,39 +523,14 @@ export class HeroStage {
     }
 
     try {
-      const [{ gsap }, { ScrollTrigger }] = await Promise.all([
-        import('gsap'),
-        import('gsap/ScrollTrigger'),
-      ]);
-      gsap.registerPlugin(ScrollTrigger);
-      // Mobile URL-bar show/hide fires resize events that would re-measure
-      // (and visibly jump) the pinned stages — ignore pure-height resizes.
-      ScrollTrigger.config({ ignoreMobileResize: true });
-
       window.addEventListener('pointermove', onPointer, { passive: true });
+      stageEl.addEventListener('pointerdown', onSwipeDown);
+      stageEl.addEventListener('pointermove', onSwipeMove);
+      stageEl.addEventListener('pointerup', endSwipe);
+      stageEl.addEventListener('pointercancel', onSwipeCancel);
 
-      const trigger = ScrollTrigger.create({
-        trigger: this.wrap().nativeElement,
-        pin: this.stage().nativeElement,
-        start: 'top top',
-        end: () => `+=${Math.round(window.innerHeight * (window.innerWidth < 768 ? 2.2 : 3.2))}`,
-        scrub: 0.5,
-        anticipatePin: 1,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => {
-          progress = self.progress;
-        },
-        onRefresh: () => layout(),
-      });
-
-      // The stages init asynchronously in arbitrary order, after the window
-      // `load` refresh has usually already happened — and this pin inserts a
-      // multi-viewport spacer that shifts everything measured before it.
-      // Re-measure every trigger now, and again once webfonts settle layout.
-      ScrollTrigger.refresh();
-      void document.fonts?.ready.then(() => ScrollTrigger.refresh());
-
-      // run while on screen, pause otherwise
+      // run while on screen, pause otherwise (so the loop stops once the user
+      // scrolls past to the cocktails section)
       let inView = true;
       let visible = !document.hidden;
       const loop = () => {
@@ -422,16 +549,25 @@ export class HeroStage {
       document.addEventListener('visibilitychange', onVis);
       loop();
 
+      // Start the auto-sequence when the intro curtain lifts. The fallback
+      // timer is only a safety net for the case where lift() never fires — it
+      // sits well past the full intro so it never pre-empts the curtain.
+      void this.introBus.lifted.then(startAuto);
+      const autoFallback = window.setTimeout(startAuto, 9000);
+
       this.destroyRef.onDestroy(() => {
-        trigger.kill();
+        clearTimeout(autoFallback);
         io.disconnect();
         document.removeEventListener('visibilitychange', onVis);
         window.removeEventListener('pointermove', onPointer);
+        stageEl.removeEventListener('pointerdown', onSwipeDown);
+        stageEl.removeEventListener('pointermove', onSwipeMove);
+        stageEl.removeEventListener('pointerup', endSwipe);
+        stageEl.removeEventListener('pointercancel', onSwipeCancel);
         teardownBase();
       });
     } catch {
-      // GSAP failed — fall back to the static stacked layout
-      hostEl.classList.remove('is-anim');
+      fail();
       staticMode = true;
       renderStatic();
       this.destroyRef.onDestroy(teardownBase);

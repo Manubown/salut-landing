@@ -51,20 +51,52 @@
   gap: var(--s-5);
 }
 .intro__word {
-  display: flex;
-  overflow: hidden;
-  padding-block: 0.08em;
-  font: 700 clamp(3.2rem, 11vw, 7rem)/1 var(--font-display);
-  letter-spacing: 0.03em;
+  display: grid;
+  place-items: center;
+  height: clamp(3.4rem, 12vw, 7.2rem); /* drives the word size */
+  margin-block: 0.12em;
+}
+/* Each word is a handwriting SVG outline that draws itself on (stroke-
+   dashoffset) then fills. Greetings and the wordmark share one cell; GSAP
+   draws one at a time. ("Salut" literally means "hi" — greeting becomes brand.) */
+.intro__draw {
+  grid-area: 1 / 1;
+  height: 100%;
+  width: auto; /* width from the SVG viewBox aspect ratio */
+  display: block;
+  overflow: visible;
   color: var(--text);
 }
-.intro__letter {
-  display: inline-block;
-  font-weight: inherit;
-  transform: translateY(110%); /* hidden until GSAP takes over */
-  will-change: transform;
+/* Single-stroke cursive: the pen draws ALONG each glyph's centerline via
+   stroke-dashoffset (no fill, no outline border). pathLength is normalised to
+   1; offset 1 = undrawn (the SSR state) until GSAP draws it to 0. */
+.intro__draw path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  vector-effect: non-scaling-stroke;
 }
-.intro__letter:last-child { color: var(--primary); }
+.intro__brand {
+  grid-area: 1 / 1;
+  height: 100%;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.12em;
+}
+.intro__brand .intro__draw { grid-area: auto; } /* lives in the flex row, not the grid */
+/* Salut's signature dot. */
+.intro__dot {
+  width: clamp(9px, 1.5vw, 15px);
+  aspect-ratio: 1;
+  margin-bottom: 0.16em;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: var(--glow-punch);
+}
 .intro__line {
   width: min(240px, 42vw);
   height: 2px;
@@ -202,14 +234,14 @@
 .line { display: block; overflow: hidden; padding-block: 0.08em; margin-block: -0.04em; }
 .line__in { display: inline-block; will-change: transform; }
 .hero__title .hl {
+  /* Static gradient — the headline reads as calm type, not a panning light. */
   background: linear-gradient(100deg, var(--c-punch), var(--c-citrus), var(--c-punch-300));
-  background-size: 220% 100%;
+  background-size: 160% 100%;
+  background-position: 22% 50%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: hl-pan 7s var(--ease-out) infinite alternate;
 }
-@keyframes hl-pan { to { background-position: 100% 50%; } }
 .hero__lede {
   font-size: var(--fs-500);
   color: var(--text-muted);
@@ -239,7 +271,7 @@
   letter-spacing: .22em;
   color: var(--text-subtle);
 }
-.hero__hint i { font-style: normal; animation: hint-bob 1.8s var(--ease-out) infinite; }
+.hero__hint i { font-style: normal; animation: hint-bob 2.4s var(--ease-out) infinite; }
 @keyframes hint-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 5px; } }
 
 /* Beats B & C — glass panel anchored left of the device on desktop */
@@ -276,7 +308,8 @@
 .marquee__track {
   display: flex;
   width: max-content;
-  animation: marquee 30s linear infinite;
+  /* Slow drift rather than a racing ticker — present, not attention-grabbing. */
+  animation: marquee 64s linear infinite;
 }
 .marquee__group { display: flex; flex: none; }
 .marquee__item {
@@ -390,6 +423,7 @@
   width: clamp(76px, 9vw, 104px);
   height: clamp(100px, 12vw, 136px);
   filter: drop-shadow(0 12px 16px color-mix(in srgb, var(--liquid, #000) 35%, transparent));
+  /* Gentle idle wiggle — the one bit of ambient motion worth keeping. */
   animation: ck-bob 4.6s ease-in-out infinite;
   animation-delay: calc(var(--i, 0) * -0.9s);
 }
@@ -451,12 +485,6 @@
   border: 1px solid var(--border-strong);
   border-radius: var(--r-pill);
   box-shadow: var(--shadow-2);
-  animation: ck-float 5.5s ease-in-out infinite;
-  animation-delay: calc(var(--i, 0) * -0.7s);
-}
-@keyframes ck-float {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(-5px); }
 }
 
 /* Act · events teaser → /events */

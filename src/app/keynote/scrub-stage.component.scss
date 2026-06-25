@@ -23,6 +23,17 @@
   display: block;
 }
 
+/* Phones: the WebGL act is replaced by a static poster snapshot (`--poster`)
+   layered over the venue gradient; the now-disposed canvas is hidden. */
+.scrub__stage--poster {
+  background-image: var(--poster),
+    radial-gradient(120% 70% at 50% 0%, #221645 0%, #140d22 55%, #0c0717 100%);
+  background-repeat: no-repeat;
+  background-position: center 44%, center;
+  background-size: contain, cover;
+}
+.scrub__stage--poster .scrub__canvas { display: none; }
+
 /* Small caption floating under the device. */
 .scrub__label {
   position: absolute;

@@ -35,6 +35,8 @@
   height: 100vh; /* vh, not svh — covers the band behind a hiding mobile URL bar */
   min-height: 0;
   padding: 0;
+  /* vertical drags scroll the page; horizontal flicks reach the swipe handler */
+  touch-action: pan-y;
 }
 :host(.is-anim) .hstage__cap {
   position: absolute;
@@ -42,12 +44,13 @@
   pointer-events: none;
   will-change: transform, opacity;
 }
-:host(.is-anim) .hstage__cap--a {
+:host(.is-anim) .hstage__cap--reveal {
   top: 50%;
   translate: 0 -50%;
 }
-:host(.is-anim) .hstage__cap--b,
-:host(.is-anim) .hstage__cap--c {
+/* The three app-scene captions overlap; the render loop cross-fades whichever
+   matches the active scene. */
+:host(.is-anim) .hstage__cap--scene {
   top: 50%;
   translate: 0 -50%;
   opacity: 0;
@@ -58,8 +61,7 @@
 
 /* On phones the captions sit in a bottom band instead of beside the device. */
 @media (max-width: 768px) {
-  :host(.is-anim) .hstage__cap--b,
-  :host(.is-anim) .hstage__cap--c {
+  :host(.is-anim) .hstage__cap--scene {
     top: auto;
     bottom: 7svh;
     translate: 0 0;

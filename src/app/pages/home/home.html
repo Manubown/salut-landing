@@ -1,14 +1,26 @@
 <a class="skip-link" href="#cocktails">{{ c.skip }}</a>
 
-<!-- ░░ INTRO / PRELOADER — wiped away by the GSAP timeline ░░ -->
+<!-- ░░ INTRO / PRELOADER — handwriting greetings draw on, settle on Salut ░░ -->
 <div class="intro" aria-hidden="true">
   <span class="intro__mark">S</span>
   <div class="intro__center">
-    <span class="intro__word">
-      @for (ch of introLetters; track $index) {
-        <b class="intro__letter">{{ ch }}</b>
+    <div class="intro__word">
+      @for (w of greetWords; track w.key) {
+        <svg class="intro__draw" [attr.viewBox]="w.viewBox" preserveAspectRatio="xMidYMid meet">
+          @for (s of w.strokes; track $index) {
+            <path [attr.d]="s" pathLength="1" />
+          }
+        </svg>
       }
-    </span>
+      <span class="intro__brand">
+        <svg class="intro__draw" [attr.viewBox]="brandWordData.viewBox" preserveAspectRatio="xMidYMid meet">
+          @for (s of brandWordData.strokes; track $index) {
+            <path [attr.d]="s" pathLength="1" />
+          }
+        </svg>
+        <i class="intro__dot"></i>
+      </span>
+    </div>
     <span class="intro__line"></span>
     <span class="intro__tag">{{ c.introTagline }}</span>
   </div>
@@ -42,9 +54,9 @@
 </header>
 
 <main id="top">
-  <!-- ░░ HERO — party light show → it's all on a 3D phone → first round logged ░░ -->
+  <!-- ░░ HERO — party → it's all on a 3D phone → app cycles install/bac/drinks ░░ -->
   <salut-hero-stage [notes]="c.heroNotes">
-    <div slot="phase-a" class="container hero-cap hero-cap--a">
+    <div slot="reveal" class="container hero-cap hero-cap--a">
       <h1 class="hero__title">
         <span class="line"><span class="line__in" data-anim="line">{{ c.heroTitleA }}</span></span>
         <span class="line"><span class="line__in hl" data-anim="line">{{ c.heroTitleHl }}</span></span>
@@ -59,17 +71,24 @@
       <span class="hero__hint" data-anim="rise">{{ c.scroll }} <i aria-hidden="true">↓</i></span>
     </div>
 
-    <div slot="phase-b" class="container hero-cap hero-cap--side">
+    <div slot="install" class="container hero-cap hero-cap--side">
       <div class="hero-cap__panel">
         <h2 class="hero-cap__title">{{ c.heroRevealTitle }}</h2>
         <p class="hero-cap__lede">{{ c.heroRevealLede }}</p>
       </div>
     </div>
 
-    <div slot="phase-c" class="container hero-cap hero-cap--side">
+    <div slot="bac" class="container hero-cap hero-cap--side">
       <div class="hero-cap__panel">
         <h2 class="hero-cap__title">{{ c.heroTrackTitle }}</h2>
         <p class="hero-cap__lede">{{ c.heroTrackLede }}</p>
+      </div>
+    </div>
+
+    <div slot="drinks" class="container hero-cap hero-cap--side">
+      <div class="hero-cap__panel">
+        <h2 class="hero-cap__title">{{ c.ckTitle }}</h2>
+        <p class="hero-cap__lede">{{ c.ckLede }}</p>
         <div class="hero__cta">
           <a class="btn btn--primary btn--lg" salutMagnetic [href]="appUrl" target="_blank" rel="noopener">
             {{ c.ctaOpen }} <span aria-hidden="true">→</span>
@@ -91,15 +110,6 @@
       }
     </div>
   </div>
-
-  <!-- ░░ ACT 1 · BAC (scroll-scrub) ░░ -->
-  <salut-scrub-stage id="bac" motion="bar" accent="#56ccf2" [label]="c.bacLabel" [scrollLength]="2.4">
-    <div class="act-caption">
-      <span class="eyebrow">{{ c.bacEyebrow }}</span>
-      <h2 class="act-caption__title">{{ c.bacTitle }}</h2>
-      <p class="act-caption__lede">{{ c.bacLede }}</p>
-    </div>
-  </salut-scrub-stage>
 
   <!-- ░░ ACT 2 · COCKTAILS ░░ -->
   <section id="cocktails" class="act act--cocktails">

@@ -91,6 +91,10 @@ export class ScrubStage {
     const stageEl = this.stage().nativeElement;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const coarse = window.matchMedia('(pointer: coarse)').matches;
+    // Phones render a single static poster of the phone instead of a pinned,
+    // scroll-scrubbed WebGL act — then the GL context is freed, so only the
+    // hero keeps a live context. Kills the frame-drops + scroll-jank here.
+    const lite = coarse;
     const mode: UiMode = this.motion() === 'fly' ? 'install' : 'track';
     const accent = this.accent();
 
@@ -107,6 +111,9 @@ export class ScrubStage {
         antialias: true,
         alpha: true,
         powerPreference: 'high-performance',
+        // lite mode snapshots the canvas to a poster, which needs the drawing
+        // buffer to survive past the render call
+        preserveDrawingBuffer: lite,
       });
     } catch {
       return;
@@ -224,6 +231,33 @@ export class ScrubStage {
       appTex.dispose();
       renderer.dispose();
     };
+
+    if (lite) {
+      // Wait for the display font so the poster's UI text is crisp, render one
+      // frame, snapshot it, then free the GL context (the poster is now a
+      // plain CSS image that scales with the stage).
+      await document.fonts?.ready.catch(() => {});
+      if (dead) return;
+      staticMode = true;
+      renderOnce(0.55);
+      let snapped = false;
+      try {
+        const url = canvas.toDataURL('image/png');
+        if (url && url.length > 256) {
+          stageEl.style.setProperty('--poster', `url("${url}")`);
+          stageEl.classList.add('scrub__stage--poster');
+          snapped = true;
+        }
+      } catch {
+        /* snapshot blocked — keep the live static canvas instead */
+      }
+      if (snapped) {
+        teardown(); // poster captured — no need to keep the WebGL context alive
+      } else {
+        this.destroyRef.onDestroy(teardown);
+      }
+      return;
+    }
 
     if (reduced) {
       staticMode = true;
