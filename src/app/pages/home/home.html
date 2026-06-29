@@ -115,27 +115,30 @@
   <section id="cocktails" class="act act--cocktails">
     <span class="act__num" aria-hidden="true">01</span>
     <div class="container">
-      <div class="act__head act__reveal">
-        <span class="eyebrow">{{ c.ckEyebrow }}</span>
-        <h2 class="act__title">{{ c.ckTitle }}</h2>
-        <p class="act__lede">{{ c.ckLede }}</p>
-      </div>
+      <div class="feature">
+        <div class="feature__glow parallax" aria-hidden="true"></div>
+        <div class="act__head act__reveal">
+          <span class="eyebrow">{{ c.ckEyebrow }}</span>
+          <h2 class="act__title">{{ c.ckTitle }}</h2>
+          <p class="act__lede">{{ c.ckLede }}</p>
+        </div>
 
-      <ul class="ck-grid">
-        @for (ck of cocktails; track ck.name; let i = $index) {
-          <li class="ck-card" [style.--i]="i" salutClickPop>
-            <span class="ck-card__desc">{{ c.ckBlurbs[i] }}</span>
-            <div class="ck-card__glass" [style.--liquid]="ck.color">
-              <salut-drink-glass [glass]="ck.glass" [color]="ck.color" />
-            </div>
-            <h3 class="ck-card__name">{{ ck.name }}</h3>
-            <span class="ck-card__base">{{ ck.base }}</span>
-          </li>
-        }
-      </ul>
+        <ul class="ck-grid">
+          @for (ck of cocktails; track ck.name; let i = $index) {
+            <li class="ck-card" [style.--i]="i" salutClickPop>
+              <span class="ck-card__desc">{{ c.ckBlurbs[i] }}</span>
+              <div class="ck-card__glass" [style.--liquid]="ck.color">
+                <salut-drink-glass [glass]="ck.glass" [color]="ck.color" />
+              </div>
+              <h3 class="ck-card__name">{{ ck.name }}</h3>
+              <span class="ck-card__base">{{ ck.base }}</span>
+            </li>
+          }
+        </ul>
 
-      <div class="act__foot">
-        <a class="btn btn--lg" [href]="appUrl" target="_blank" rel="noopener">{{ c.ckCta }}</a>
+        <div class="act__foot">
+          <a class="btn btn--lg" [href]="appUrl" target="_blank" rel="noopener">{{ c.ckCta }}</a>
+        </div>
       </div>
     </div>
   </section>
@@ -144,22 +147,25 @@
   <section id="events" class="act act--events">
     <span class="act__num" aria-hidden="true">02</span>
     <div class="container">
-      <div class="act__head act__head--center act__reveal">
-        <span class="eyebrow">{{ c.evEyebrow }}</span>
-        <h2 class="act__title">{{ c.evTitle }}</h2>
-        <p class="act__lede">{{ c.evLede }}</p>
-      </div>
-      <ul class="ev-cats">
-        @for (cat of eventCats; track cat.id; let i = $index) {
-          <li class="ev-cat" [style.--i]="i" [style.--g1]="cat.gradient[0]" [style.--g2]="cat.gradient[1]">
-            {{ cat.label }}
-          </li>
-        }
-      </ul>
-      <div class="act__foot">
-        <a class="btn btn--primary btn--lg" salutMagnetic routerLink="/events"
-          >{{ c.evCta }} <span aria-hidden="true">→</span></a
-        >
+      <div class="feature">
+        <div class="feature__glow parallax" aria-hidden="true"></div>
+        <div class="act__head act__head--center act__reveal">
+          <span class="eyebrow">{{ c.evEyebrow }}</span>
+          <h2 class="act__title">{{ c.evTitle }}</h2>
+          <p class="act__lede">{{ c.evLede }}</p>
+        </div>
+        <ul class="ev-cats">
+          @for (cat of eventCats; track cat.id; let i = $index) {
+            <li class="ev-cat" [style.--i]="i" [style.--g1]="cat.gradient[0]" [style.--g2]="cat.gradient[1]">
+              {{ cat.label }}
+            </li>
+          }
+        </ul>
+        <div class="act__foot">
+          <a class="btn btn--primary btn--lg" salutMagnetic routerLink="/events"
+            >{{ c.evCta }} <span aria-hidden="true">→</span></a
+          >
+        </div>
       </div>
     </div>
   </section>
