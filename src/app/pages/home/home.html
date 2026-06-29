@@ -55,7 +55,7 @@
 
 <main id="top">
   <!-- ░░ HERO — party → it's all on a 3D phone → app cycles install/bac/drinks ░░ -->
-  <salut-hero-stage [notes]="c.heroNotes">
+  <salut-hero-stage [notes]="c.heroNotes" [scrollLabel]="c.scroll">
     <div slot="reveal" class="container hero-cap hero-cap--a">
       <h1 class="hero__title">
         <span class="line"><span class="line__in" data-anim="line">{{ c.heroTitleA }}</span></span>
@@ -167,31 +167,35 @@
   <!-- ░░ ACT 3 · THE CREW ░░ -->
   <section class="act act--crew">
     <span class="act__num" aria-hidden="true">03</span>
-    <div class="crew__screens parallax" aria-hidden="true">
-      <span class="bs bs--a"></span>
-      <span class="bs bs--b"></span>
-    </div>
-    <div class="container act__grid">
-      <div class="act__copy act__reveal">
-        <span class="eyebrow">{{ c.crewEyebrow }}</span>
-        <h2 class="act__title">{{ c.crewTitle }}</h2>
-        <p class="act__lede">{{ c.crewLede }}</p>
-        <ul class="chips">
-          @for (chip of c.chips; track chip) {
-            <li class="chip">{{ chip }}</li>
-          }
-        </ul>
-      </div>
-      <div class="act__media act__reveal" aria-hidden="true">
-        <div class="lb">
-          <span class="lb__head">{{ c.lbHead }}</span>
-          @for (r of ranks; track r.pos; let i = $index) {
-            <div class="lb__row" [style.--i]="i" [class.lb__row--you]="r.you">
-              <span class="lb__pos">{{ r.pos }}</span>
-              <span class="lb__name">{{ r.you ? c.lbYou : r.name }}</span>
-              <span class="lb__pts">{{ r.pts }} pts</span>
+    <div class="container">
+      <div class="feature">
+        <div class="crew__screens parallax" aria-hidden="true">
+          <span class="bs bs--a"></span>
+          <span class="bs bs--b"></span>
+        </div>
+        <div class="act__grid">
+          <div class="act__copy act__reveal">
+            <span class="eyebrow">{{ c.crewEyebrow }}</span>
+            <h2 class="act__title">{{ c.crewTitle }}</h2>
+            <p class="act__lede">{{ c.crewLede }}</p>
+            <ul class="chips">
+              @for (chip of c.chips; track chip) {
+                <li class="chip">{{ chip }}</li>
+              }
+            </ul>
+          </div>
+          <div class="act__media act__reveal" aria-hidden="true">
+            <div class="lb">
+              <span class="lb__head">{{ c.lbHead }}</span>
+              @for (r of ranks; track r.pos; let i = $index) {
+                <div class="lb__row" [style.--i]="i" [class.lb__row--you]="r.you">
+                  <span class="lb__pos">{{ r.pos }}</span>
+                  <span class="lb__name">{{ r.you ? c.lbYou : r.name }}</span>
+                  <span class="lb__pts">{{ r.pts }} pts</span>
+                </div>
+              }
             </div>
-          }
+          </div>
         </div>
       </div>
     </div>
@@ -200,15 +204,20 @@
   <!-- ░░ ACT 4 · GAMES ░░ -->
   <section class="act act--games">
     <span class="act__num" aria-hidden="true">04</span>
-    <div class="container act__grid">
-      <div class="act__media" aria-hidden="true">
-        <div class="wheel"><span class="wheel__pin"></span></div>
-      </div>
-      <div class="act__copy act__reveal">
-        <span class="eyebrow">{{ c.gamesEyebrow }}</span>
-        <h2 class="act__title">{{ c.gamesTitle }}</h2>
-        <p class="act__lede">{{ c.gamesLede }}</p>
-        <a class="btn btn--lg" [href]="appUrl" target="_blank" rel="noopener">{{ c.gamesCta }}</a>
+    <div class="container">
+      <div class="feature">
+        <div class="feature__glow parallax" aria-hidden="true"></div>
+        <div class="act__grid">
+          <div class="act__media" aria-hidden="true">
+            <div class="wheel"><span class="wheel__pin"></span></div>
+          </div>
+          <div class="act__copy act__reveal">
+            <span class="eyebrow">{{ c.gamesEyebrow }}</span>
+            <h2 class="act__title">{{ c.gamesTitle }}</h2>
+            <p class="act__lede">{{ c.gamesLede }}</p>
+            <a class="btn btn--lg" [href]="appUrl" target="_blank" rel="noopener">{{ c.gamesCta }}</a>
+          </div>
+        </div>
       </div>
     </div>
   </section>

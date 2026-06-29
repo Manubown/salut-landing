@@ -1,5 +1,19 @@
 :host { display: block; }
 
+/* Seamless dark continuum behind every section: starts where the hero gradient
+   ends (#0c0717), flows into the venue bg, and carries a few faint colour glows
+   for apple-style ambient depth. It sits behind the (opaque) hero/scrub stages
+   and shows through the transparent acts, so the page reads as one canvas with
+   no hard seams between sections. */
+main {
+  position: relative;
+  background:
+    radial-gradient(78% 36% at 84% 9%, color-mix(in srgb, var(--c-grape) 20%, transparent), transparent 60%),
+    radial-gradient(64% 30% at 6% 44%, color-mix(in srgb, var(--c-punch) 12%, transparent), transparent 58%),
+    radial-gradient(88% 38% at 64% 86%, color-mix(in srgb, var(--c-grape) 13%, transparent), transparent 62%),
+    linear-gradient(180deg, #0c0717 0%, #140d22 9%, var(--bg) 34%);
+}
+
 .skip-link {
   position: absolute;
   left: var(--s-4);
@@ -290,8 +304,25 @@
 .hero-cap--side .hero__cta { justify-content: flex-start; margin-top: var(--s-5); }
 
 @media (max-width: 768px) {
-  .hero-cap--side .hero-cap__panel { max-width: none; padding: var(--s-5); }
-  .hero-cap__title { font-size: var(--fs-600); }
+  /* Headline-led caption cards: big title, minimal body, clearly distinct from
+     the device above them (stronger glass so they don't blend into the scene). */
+  .hero-cap--side .hero-cap__panel {
+    max-width: none;
+    padding: var(--s-5);
+    text-align: center;
+    background: color-mix(in srgb, var(--surface) 64%, transparent);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+  .hero-cap__title { font-size: var(--fs-700); margin-bottom: var(--s-2); }
+  .hero-cap__lede {
+    font-size: var(--fs-300);
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* keep the card tight — let the headline carry it */
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .hero-cap--side .hero__cta { justify-content: center; }
 }
 
 /* Marquee ticker pinned to the hero's bottom edge */
@@ -299,11 +330,10 @@
   position: relative;
   z-index: 2;
   overflow: hidden;
-  border-block: 1px solid var(--border);
-  padding: var(--s-4) 0;
-  background: color-mix(in srgb, var(--bg) 55%, transparent);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  /* Borderless + transparent so it melts into the continuum (no hard seam
+     between the hero and the first act); the drifting text is the only mark. */
+  padding: var(--s-5) 0;
+  background: transparent;
 }
 .marquee__track {
   display: flex;
@@ -348,6 +378,39 @@
   -webkit-text-stroke: 1px color-mix(in srgb, var(--text-subtle) 36%, transparent);
 }
 .act > .container { position: relative; z-index: 1; }
+
+/* Apple-style feature card — a big rounded panel that frames a "detail" section
+   (crew, games). `overflow: clip` turns any inner `.parallax` layer into a
+   parallax *inside* the card as it scrolls through view. */
+.feature {
+  position: relative;
+  isolation: isolate;
+  padding: clamp(28px, 5vw, 64px);
+  border-radius: var(--r-xl);
+  overflow: clip;
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--surface) 78%, transparent),
+    color-mix(in srgb, var(--c-night) 70%, transparent)
+  );
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), var(--shadow-3);
+}
+.feature .act__grid { position: relative; z-index: 1; }
+/* Soft colour wash that drifts within the card while it's on screen. */
+.feature__glow {
+  position: absolute;
+  inset: -22% -12%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 40% at 22% 16%, color-mix(in srgb, var(--c-grape) 52%, transparent), transparent 70%),
+    radial-gradient(40% 42% at 84% 88%, color-mix(in srgb, var(--c-punch) 36%, transparent), transparent 72%);
+  filter: blur(6px);
+}
+@media (max-width: 560px) {
+  .feature { padding: var(--s-6) var(--s-5); border-radius: var(--r-lg); }
+}
 
 /* Captions projected into the scrub stages — glass panel so they float
    over the 3D stage instead of sitting on a plain gradient. */

@@ -61,6 +61,26 @@ import { IntroBus } from '../../core/intro/intro.bus';
         <div class="hstage__cap hstage__cap--scene" #capDrinks>
           <ng-content select="[slot=drinks]" />
         </div>
+
+        <!-- Auto-advance indicator for the app-scene carousel: each pill fills
+             as its scene plays, then advances. Clickable to jump scenes. -->
+        <div class="hstage__dots" #dots>
+          <button type="button" class="hstage__dot" aria-label="Show first feature">
+            <i class="hstage__dot-fill"></i>
+          </button>
+          <button type="button" class="hstage__dot" aria-label="Show second feature">
+            <i class="hstage__dot-fill"></i>
+          </button>
+          <button type="button" class="hstage__dot" aria-label="Show third feature">
+            <i class="hstage__dot-fill"></i>
+          </button>
+        </div>
+
+        <!-- Persistent "scroll to continue" cue; fades as the page scrolls. -->
+        <div class="hstage__scroll" #scrollCue aria-hidden="true">
+          <span class="hstage__mouse"><i></i></span>
+          <span class="hstage__scroll-label">{{ scrollLabel() }}</span>
+        </div>
       </div>
     </div>
   `,
@@ -69,6 +89,8 @@ import { IntroBus } from '../../core/intro/intro.bus';
 export class HeroStage {
   /** Push notifications that pop off the device (friends tracking drinks). */
   readonly notes = input<readonly HeroNote[]>([]);
+  /** Localised label for the scroll cue (e.g. "Scroll"). */
+  readonly scrollLabel = input('Scroll');
 
   private readonly wrap = viewChild.required<ElementRef<HTMLElement>>('wrap');
   private readonly stage = viewChild.required<ElementRef<HTMLElement>>('stage');
@@ -77,6 +99,8 @@ export class HeroStage {
   private readonly capInstall = viewChild.required<ElementRef<HTMLElement>>('capInstall');
   private readonly capBac = viewChild.required<ElementRef<HTMLElement>>('capBac');
   private readonly capDrinks = viewChild.required<ElementRef<HTMLElement>>('capDrinks');
+  private readonly dots = viewChild.required<ElementRef<HTMLElement>>('dots');
+  private readonly scrollCue = viewChild.required<ElementRef<HTMLElement>>('scrollCue');
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroyRef = inject(DestroyRef);
   private readonly introBus = inject(IntroBus);
@@ -252,6 +276,10 @@ export class HeroStage {
       this.capBac().nativeElement,
       this.capDrinks().nativeElement,
     ];
+    const dotsEl = this.dots().nativeElement;
+    const dotEls = Array.from(dotsEl.querySelectorAll<HTMLElement>('.hstage__dot'));
+    const dotFills = dotEls.map((d) => d.querySelector<HTMLElement>('.hstage__dot-fill')!);
+    const scrollCueEl = this.scrollCue().nativeElement;
     // The reveal headline fades up as the app opens.
     const setReveal = (o: number, y: number) => {
       capReveal.style.opacity = o.toFixed(3);
@@ -401,7 +429,9 @@ export class HeroStage {
       camera.position.z = lerp(zNear, zFar, zoom);
       const sideShift = portrait ? 0 : 0.52;
       rig.group.position.x = zoom * sideShift;
-      rig.group.position.y = zoom * (portrait ? 0.14 : 0.05) + Math.sin(time * 0.5) * 0.02 * zoom;
+      // On phones the device rides higher so it never overlaps the caption card
+      // + indicator sitting in the bottom band; on desktop it stays centred.
+      rig.group.position.y = zoom * (portrait ? 0.52 : 0.05) + Math.sin(time * 0.5) * 0.02 * zoom;
       rig.group.rotation.y = zoom * -0.34 + px.x * 0.13 * zoom + Math.sin(time * 0.4) * 0.03 * zoom;
       rig.group.rotation.x = zoom * 0.05 + px.y * -0.09 * zoom;
       camera.lookAt(rig.group.position.x * 0.85, rig.group.position.y * 0.6, 0);
@@ -413,6 +443,7 @@ export class HeroStage {
       let mode: UiMode = SCENES[0];
       let sceneP = 0;
       let dim = 0;
+      let idx = 0;
       const cycling = at >= REVEAL_END;
       if (cycling) {
         if (!dragging) {
@@ -426,7 +457,7 @@ export class HeroStage {
             }
           }
         }
-        const idx = modN(Math.round(scenePos));
+        idx = modN(Math.round(scenePos));
         if (idx !== lastIdx) {
           lastIdx = idx;
           sceneBuildT = 0;
@@ -471,6 +502,18 @@ export class HeroStage {
         rel = rel - N * Math.round(rel / N); // nearest wrapped position
         const o = cycling ? Math.max(0, 1 - Math.abs(rel) * 1.5) * cycleIn : 0;
         setCard(sceneCaps[i], rel * spacing, o);
+      }
+
+      // scene indicator — the active pill fills over the auto-advance cooldown,
+      // so the carousel reads as "spinning" between the three app scenes
+      dotsEl.style.opacity = cycleIn.toFixed(3);
+      dotsEl.style.visibility = cycleIn <= 0.001 ? 'hidden' : 'visible';
+      dotsEl.style.pointerEvents = cycleIn > 0.5 ? 'auto' : 'none';
+      const fillRatio = dragging ? 0 : Math.min(1, autoTimer / SCENE_DUR);
+      for (let i = 0; i < dotFills.length; i++) {
+        const on = i === idx;
+        dotEls[i].classList.toggle('is-on', on);
+        dotFills[i].style.transform = `scaleX(${on ? fillRatio.toFixed(3) : '0'})`;
       }
 
       renderer.render(scene, camera);
@@ -529,6 +572,29 @@ export class HeroStage {
       stageEl.addEventListener('pointerup', endSwipe);
       stageEl.addEventListener('pointercancel', onSwipeCancel);
 
+      // Fade the scroll cue out as the page scrolls away from the hero.
+      const onScroll = () => {
+        const o = Math.max(0, 1 - (window.scrollY || 0) / 130);
+        scrollCueEl.style.opacity = o.toFixed(3);
+        scrollCueEl.style.visibility = o <= 0.01 ? 'hidden' : 'visible';
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      // Tapping an indicator pill jumps to that scene (nearest wrapped target).
+      const onDot = (i: number) => () => {
+        if (!cyclingNow()) return;
+        let rel = i - modN(Math.round(scenePos));
+        rel = rel - N * Math.round(rel / N);
+        targetPos = Math.round(scenePos) + rel;
+        autoTimer = 0;
+      };
+      const dotHandlers = dotEls.map((el, i) => {
+        const h = onDot(i);
+        el.addEventListener('click', h);
+        return h;
+      });
+
       // run while on screen, pause otherwise (so the loop stops once the user
       // scrolls past to the cocktails section)
       let inView = true;
@@ -560,10 +626,12 @@ export class HeroStage {
         io.disconnect();
         document.removeEventListener('visibilitychange', onVis);
         window.removeEventListener('pointermove', onPointer);
+        window.removeEventListener('scroll', onScroll);
         stageEl.removeEventListener('pointerdown', onSwipeDown);
         stageEl.removeEventListener('pointermove', onSwipeMove);
         stageEl.removeEventListener('pointerup', endSwipe);
         stageEl.removeEventListener('pointercancel', onSwipeCancel);
+        dotEls.forEach((el, i) => el.removeEventListener('click', dotHandlers[i]));
         teardownBase();
       });
     } catch {
