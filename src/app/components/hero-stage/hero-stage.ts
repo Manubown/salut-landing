@@ -75,12 +75,6 @@ import { IntroBus } from '../../core/intro/intro.bus';
             <i class="hstage__dot-fill"></i>
           </button>
         </div>
-
-        <!-- Persistent "scroll to continue" cue; fades as the page scrolls. -->
-        <div class="hstage__scroll" #scrollCue aria-hidden="true">
-          <span class="hstage__mouse"><i></i></span>
-          <span class="hstage__scroll-label">{{ scrollLabel() }}</span>
-        </div>
       </div>
     </div>
   `,
@@ -89,8 +83,6 @@ import { IntroBus } from '../../core/intro/intro.bus';
 export class HeroStage {
   /** Push notifications that pop off the device (friends tracking drinks). */
   readonly notes = input<readonly HeroNote[]>([]);
-  /** Localised label for the scroll cue (e.g. "Scroll"). */
-  readonly scrollLabel = input('Scroll');
 
   private readonly wrap = viewChild.required<ElementRef<HTMLElement>>('wrap');
   private readonly stage = viewChild.required<ElementRef<HTMLElement>>('stage');
@@ -100,7 +92,6 @@ export class HeroStage {
   private readonly capBac = viewChild.required<ElementRef<HTMLElement>>('capBac');
   private readonly capDrinks = viewChild.required<ElementRef<HTMLElement>>('capDrinks');
   private readonly dots = viewChild.required<ElementRef<HTMLElement>>('dots');
-  private readonly scrollCue = viewChild.required<ElementRef<HTMLElement>>('scrollCue');
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroyRef = inject(DestroyRef);
   private readonly introBus = inject(IntroBus);
@@ -279,7 +270,6 @@ export class HeroStage {
     const dotsEl = this.dots().nativeElement;
     const dotEls = Array.from(dotsEl.querySelectorAll<HTMLElement>('.hstage__dot'));
     const dotFills = dotEls.map((d) => d.querySelector<HTMLElement>('.hstage__dot-fill')!);
-    const scrollCueEl = this.scrollCue().nativeElement;
     // The reveal headline fades up as the app opens.
     const setReveal = (o: number, y: number) => {
       capReveal.style.opacity = o.toFixed(3);
@@ -572,15 +562,6 @@ export class HeroStage {
       stageEl.addEventListener('pointerup', endSwipe);
       stageEl.addEventListener('pointercancel', onSwipeCancel);
 
-      // Fade the scroll cue out as the page scrolls away from the hero.
-      const onScroll = () => {
-        const o = Math.max(0, 1 - (window.scrollY || 0) / 130);
-        scrollCueEl.style.opacity = o.toFixed(3);
-        scrollCueEl.style.visibility = o <= 0.01 ? 'hidden' : 'visible';
-      };
-      window.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
-
       // Tapping an indicator pill jumps to that scene (nearest wrapped target).
       const onDot = (i: number) => () => {
         if (!cyclingNow()) return;
@@ -626,7 +607,6 @@ export class HeroStage {
         io.disconnect();
         document.removeEventListener('visibilitychange', onVis);
         window.removeEventListener('pointermove', onPointer);
-        window.removeEventListener('scroll', onScroll);
         stageEl.removeEventListener('pointerdown', onSwipeDown);
         stageEl.removeEventListener('pointermove', onSwipeMove);
         stageEl.removeEventListener('pointerup', endSwipe);

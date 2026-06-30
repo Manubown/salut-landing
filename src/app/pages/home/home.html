@@ -1,23 +1,15 @@
 <a class="skip-link" href="#cocktails">{{ c.skip }}</a>
 
-<!-- ░░ INTRO / PRELOADER — handwriting greetings draw on, settle on Salut ░░ -->
+<!-- ░░ INTRO / PRELOADER — greetings fade through, settle on Salut ░░ -->
 <div class="intro" aria-hidden="true">
   <span class="intro__mark">S</span>
   <div class="intro__center">
     <div class="intro__word">
       @for (w of greetWords; track w.key) {
-        <svg class="intro__draw" [attr.viewBox]="w.viewBox" preserveAspectRatio="xMidYMid meet">
-          @for (s of w.strokes; track $index) {
-            <path [attr.d]="s" pathLength="1" />
-          }
-        </svg>
+        <span class="intro__greet">{{ w.text }}</span>
       }
       <span class="intro__brand">
-        <svg class="intro__draw" [attr.viewBox]="brandWordData.viewBox" preserveAspectRatio="xMidYMid meet">
-          @for (s of brandWordData.strokes; track $index) {
-            <path [attr.d]="s" pathLength="1" />
-          }
-        </svg>
+        <span class="intro__brandword">{{ brandWordData.text }}</span>
         <i class="intro__dot"></i>
       </span>
     </div>
@@ -55,7 +47,7 @@
 
 <main id="top">
   <!-- ░░ HERO — party → it's all on a 3D phone → app cycles install/bac/drinks ░░ -->
-  <salut-hero-stage [notes]="c.heroNotes" [scrollLabel]="c.scroll">
+  <salut-hero-stage [notes]="c.heroNotes">
     <div slot="reveal" class="container hero-cap hero-cap--a">
       <h1 class="hero__title">
         <span class="line"><span class="line__in" data-anim="line">{{ c.heroTitleA }}</span></span>

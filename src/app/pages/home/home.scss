@@ -64,49 +64,40 @@ main {
   align-items: center;
   gap: var(--s-5);
 }
+/* Greetings + wordmark share one grid cell so they cross-fade in place.
+   ("Salut" literally means "hi" — the greeting becomes the brand.) Plain
+   display type instead of drawn SVG strokes: crisp at any DPR and animates
+   cheaply (opacity/transform), so it stays smooth on mobile. */
 .intro__word {
   display: grid;
   place-items: center;
-  height: clamp(3.4rem, 12vw, 7.2rem); /* drives the word size */
   margin-block: 0.12em;
 }
-/* Each word is a handwriting SVG outline that draws itself on (stroke-
-   dashoffset) then fills. Greetings and the wordmark share one cell; GSAP
-   draws one at a time. ("Salut" literally means "hi" — greeting becomes brand.) */
-.intro__draw {
-  grid-area: 1 / 1;
-  height: 100%;
-  width: auto; /* width from the SVG viewBox aspect ratio */
-  display: block;
-  overflow: visible;
-  color: var(--text);
-}
-/* Single-stroke cursive: the pen draws ALONG each glyph's centerline via
-   stroke-dashoffset (no fill, no outline border). pathLength is normalised to
-   1; offset 1 = undrawn (the SSR state) until GSAP draws it to 0. */
-.intro__draw path {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  vector-effect: non-scaling-stroke;
-}
+.intro__greet,
 .intro__brand {
   grid-area: 1 / 1;
-  height: 100%;
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 0.12em;
 }
-.intro__brand .intro__draw { grid-area: auto; } /* lives in the flex row, not the grid */
-/* Salut's signature dot. */
+.intro__greet,
+.intro__brandword {
+  font: 700 clamp(3rem, 11vw, 6.6rem)/1 var(--font-display);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+}
+/* SSR / pre-JS state: words hidden, only the pulsing mark shows. GSAP fades
+   each in. If JS never runs, the whole intro is removed (lift path). */
+.intro__greet { opacity: 0; }
+.intro__brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.1em;
+  opacity: 0;
+}
+/* Salut's signature dot — anchored to the text baseline (its synthesized
+   baseline is its bottom edge) so it sits like a period, flush with the bottom
+   of the letters. "Salut" has no descenders, so baseline == visual bottom. */
 .intro__dot {
   width: clamp(9px, 1.5vw, 15px);
   aspect-ratio: 1;
-  margin-bottom: 0.16em;
   border-radius: 50%;
   background: var(--primary);
   box-shadow: var(--glow-punch);

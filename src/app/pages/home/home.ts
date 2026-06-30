@@ -83,10 +83,10 @@ export class Home implements OnInit {
   ];
 
   /**
-   * Handwriting word outlines for the drawn intro (generated from a script
-   * font into intro-letters.ts). Each self-draws on via stroke-dashoffset,
-   * then "Salut" stays as the wordmark — "Salut" literally means "hi", so the
-   * greeting becomes the brand.
+   * Greeting words for the intro — each fades through, then "Salut" stays as
+   * the wordmark ("Salut" literally means "hi", so the greeting becomes the
+   * brand). Rendered as plain display type (see home.scss); only `.text` is
+   * used now — the SVG stroke data in INTRO_WORDS is unused.
    */
   protected readonly greetWords = INTRO_WORDS.filter((w) => w.key !== 'salut');
   protected readonly brandWordData = INTRO_WORDS.find((w) => w.key === 'salut')!;
@@ -146,72 +146,63 @@ export class Home implements OnInit {
       gsap.set(chrome, { autoAlpha: 0, y: -16 });
 
       if (intro && !seen) {
-        const greets = Array.from(intro.querySelectorAll<SVGElement>('.intro__word > .intro__draw'));
-        const brandSvg = intro.querySelector<SVGElement>('.intro__brand .intro__draw');
-        const greetPaths = greets.map((g) => Array.from(g.querySelectorAll<SVGPathElement>('path')));
-        const brandPaths = brandSvg ? Array.from(brandSvg.querySelectorAll<SVGPathElement>('path')) : [];
+        const greets = Array.from(intro.querySelectorAll<HTMLElement>('.intro__greet'));
+        const brand = intro.querySelector('.intro__brand');
         const dot = intro.querySelector('.intro__dot');
         const line = intro.querySelector('.intro__line');
         const tag = intro.querySelector('.intro__tag');
         const mark = intro.querySelector('.intro__mark');
 
-        // every glyph starts undrawn (stroke hidden)
-        gsap.set([...greetPaths.flat(), ...brandPaths], { strokeDashoffset: 1 });
-        gsap.set(greets, { autoAlpha: 1 });
+        // words start hidden + low; each lifts in, holds, then lifts away
+        gsap.set(greets, { autoAlpha: 0, yPercent: 45, filter: 'blur(6px)' });
+        gsap.set(brand, { autoAlpha: 0, yPercent: 45, filter: 'blur(6px)' });
         gsap.set(dot, { scale: 0, autoAlpha: 0 });
 
-        tl.to(mark, { autoAlpha: 0, duration: 0.3, ease: 'power1.out' }, 0);
+        tl.to(mark, { autoAlpha: 0, duration: 0.22, ease: 'power1.out' }, 0);
 
-        // each greeting is written letter by letter — the pen follows the line —
-        // holds a beat, then fades as the next is written (fluid, no border).
-        const WRITE = 0.66;
-        const HOLD = 0.3;
-        const FADE = 0.3;
-        const STEP = WRITE + HOLD;
-        greets.forEach((svg, i) => {
-          const paths = greetPaths[i];
-          const at = 0.25 + i * STEP;
-          const per = WRITE / Math.max(1, paths.length);
-          paths.forEach((path, j) => {
-            tl.to(
-              path,
-              { strokeDashoffset: 0, duration: per * 1.7, ease: 'power1.inOut' },
-              at + j * per * 0.9,
+        // each greeting rises in, holds a beat, then falls away as the next
+        // rises — a snappy flip-through of "hi" in different languages.
+        const RISE = 0.28;
+        const HOLD = 0.16;
+        const STEP = RISE + HOLD;
+        let at = 0.1;
+        greets.forEach((el) => {
+          tl.to(el, { autoAlpha: 1, yPercent: 0, filter: 'blur(0px)', duration: RISE, ease: 'expo.out' }, at)
+            .to(
+              el,
+              { autoAlpha: 0, yPercent: -45, filter: 'blur(6px)', duration: RISE * 0.8, ease: 'power2.in' },
+              at + RISE + HOLD,
             );
-          });
-          tl.to(svg, { autoAlpha: 0, duration: FADE, ease: 'power1.in' }, at + WRITE + HOLD);
+          at += STEP;
         });
 
-        // …settle on "Salut": written letter by letter, then it stays — the red
-        // dot pops and the underline draws, signature-style, as the curtain lifts.
-        const brandAt = 0.25 + greets.length * STEP + 0.05;
-        const BRAND_WRITE = 0.82;
-        const bper = BRAND_WRITE / Math.max(1, brandPaths.length);
-        brandPaths.forEach((path, j) => {
-          tl.to(
-            path,
-            { strokeDashoffset: 0, duration: bper * 1.8, ease: 'power1.inOut' },
-            brandAt + j * bper * 0.9,
-          );
-        });
-        const brandEnd = brandAt + BRAND_WRITE + 0.1;
+        // …settle on "Salut": it rises in and stays — the red dot pops and the
+        // underline draws, signature-style, as the curtain lifts.
+        const brandAt = at + 0.02;
+        tl.to(
+          brand,
+          { autoAlpha: 1, yPercent: 0, filter: 'blur(0px)', duration: 0.4, ease: 'expo.out' },
+          brandAt,
+        );
+        const brandEnd = brandAt + 0.32;
         tl.fromTo(
           dot,
           { scale: 0, autoAlpha: 0 },
-          { scale: 1, autoAlpha: 1, duration: 0.4, ease: 'back.out(3)' },
+          { scale: 1, autoAlpha: 1, duration: 0.32, ease: 'back.out(3)' },
           brandEnd,
         )
-          .fromTo(line, { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: 'expo.inOut' }, brandEnd - 0.3)
-          .fromTo(tag, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, brandEnd + 0.05)
-          .to({}, { duration: 0.4 }) // brief hold on the wordmark
+          .fromTo(line, { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: 'expo.inOut' }, brandEnd - 0.18)
+          .fromTo(tag, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.4 }, brandEnd + 0.02)
+          .to({}, { duration: 0.22 }) // brief hold on the wordmark
           .call(lift) // hero auto-reveal begins as the curtain rises
-          .to(intro, { clipPath: 'inset(0 0 100% 0)', duration: 0.9, ease: 'expo.inOut' });
+          .to(intro, { clipPath: 'inset(0 0 100% 0)', duration: 0.7, ease: 'expo.inOut' });
       } else if (intro) {
-        // returning visit — "Salut" already written, quick fade
-        gsap.set(intro.querySelectorAll('.intro__word > .intro__draw'), { autoAlpha: 0 });
-        gsap.set(intro.querySelectorAll('.intro__brand .intro__draw path'), { strokeDashoffset: 0 });
+        // returning visit — "Salut" already settled, quick fade
+        gsap.set(intro.querySelectorAll('.intro__greet'), { autoAlpha: 0 });
+        gsap.set(intro.querySelector('.intro__brand'), { autoAlpha: 1, yPercent: 0, filter: 'blur(0px)' });
         gsap.set(intro.querySelector('.intro__dot'), { scale: 1, autoAlpha: 1 });
         gsap.set(intro.querySelector('.intro__line'), { scaleX: 1 });
+        gsap.set(intro.querySelector('.intro__tag'), { autoAlpha: 1, y: 0 });
         tl.call(lift).to(intro, { autoAlpha: 0, duration: 0.45, ease: 'power2.out' }, 0);
       } else {
         lift();
